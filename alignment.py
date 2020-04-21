@@ -11,10 +11,10 @@ if len(sys.argv)!=5:
 class Align:
 
     def __init__(self):
-        '''for demo only'''
+        '''for development only'''
         self.t2='path to t2'
         self.adc='path to adc'
-        
+        self.highb='path to highb'
         self.outdir='path to save directory'
 
     def align(self):
