@@ -12,9 +12,10 @@ class Align:
 
     def __init__(self):
         '''for demo only'''
-        self.t2='/Users/sanforth/Desktop/cases_for_talk/PEx0019_00000000/dicoms/t2'
-        self.adc='/Users/sanforth/Desktop/cases_for_talk/PEx0019_00000000/dicoms/adc/raw'
-        self.outdir='/Users/sanforth/Desktop/output'
+        self.t2='path to t2'
+        self.adc='path to adc'
+        
+        self.outdir='path to save directory'
 
     def align(self):
         '''aligned'''
