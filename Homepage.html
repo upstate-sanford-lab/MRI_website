@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dicom Viewer </title>
+    <link rel = "stylesheet" href = "static/stylesheets/style.css">
+    <script src = "static/javascripts/jquery.js"></script>
+    <script src = "static/javascripts/homepage.js"></script>
+</head>
+<body>
+    <h1> Dicom Viewer Homepage</h1>
+    <ul class = "headerbarUL">
+        <li class = "headerbarLI"><a href="/Homepage">Home</a></li>
+        <li class = "headerbarLI"><a href="#news">News</a></li>
+        <li class = "headerbarLI"><a href="#contact">Contact</a></li>
+        <li class = "headerbarLI" style="float:right"><a class="active" href="#about">About</a></li>
+    </ul>
+    <br>
+
+    <form action="/Homepage" method="POST" enctype="multipart/form-data">
+        Select or drop Dicoms for Upload. Then select upload:
+        <br/><br/>
+        adc formatted images:
+        <input id = "adc" type="file"  name="adc" multiple = "" webkitdirectory="" directory=""/>
+        <br/><br/>
+
+        HighB formatted images:
+        <input id = "HighB" type="file"  name="highb" multiple = "" webkitdirectory="" directory=""/>
+        <br/><br/>
+
+        T2 formatted images:
+        <input id = "T2" type="file" name="t2" multiple = "" webkitdirectory="" directory=""/>
+        <br/><br/>
+
+        <button type="submit" name="submit"> UPLOAD</button>
+        <br/><br/>
+
+    </form>
+
+    <p> Click <a href = "{{ url_for('Viewer') }}"> here </a> to view dicom images </p>
+    <button id = "updatelist"> Update File Lists</button>
+    <p id = "adc-list" class = "fileList"> No files uploaded </p>
+    <p id = "highb-list" class = "fileList"> No files uploaded </p>
+    <p id = "t2-list" class = "fileList"> No files uploaded </p>
+
+</body>
+</html>
+

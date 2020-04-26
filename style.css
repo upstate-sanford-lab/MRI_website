@@ -1,0 +1,66 @@
+.headerbarUL {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+}
+
+.headerbarLI {
+    float: left;
+}
+
+.fileList {
+    float: left;
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li a:hover {
+    background-color: #111;
+}
+
+canvas {
+    border: 1px solid black;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 33% 33% 33%;
+    grid-column-gap: 20px;
+    height: 600px;
+    width: 1200px;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid black;
+}
+
+.subdiv {
+
+    height: 500px;
+    width: 384px;
+    border: 1px solid blue;
+    float: left;
+}
+
+button {
+    text-decoration: none;
+    display: inline-block;
+    padding: 8px 16px;
+}
+
+button: hover{
+    background-color: #ddd
+    color: black;
+}
+
+.switch {
+    background-color: #f1f1f1;
+    color: black;
+}
