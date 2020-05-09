@@ -159,13 +159,22 @@ def cleanup(images, append, isolateFile):
     count = 0
     for image in images:
         if isolateFile == True:
+            #use os module
             images[count] = image.split('\\')[7]
         else:
+            #use os module
             images[count] = append + image.split('static')[1]
         count = count + 1
     return [images,count]
 
 app = Flask(__name__)
+
+#Consider nested for loop here:
+#basepath=r'C:\something\something\static'
+#for root in ['UPLOADS','JPG','ALIGNED']:
+#   app.config[root]=os.path.join(basepath,root)
+#   for series in ['t2','acd','highb']:
+#       app.config[series+'_'+root]=os.path.join(basepath,root,series)
 
 app.config["UPLOADS"] = r'C:\Users\MSStore\WebApp\static\uploads'
 app.config["adc_UPLOADS"] = r'C:\Users\MSStore\WebApp\static\uploads\adc'
@@ -212,7 +221,7 @@ def index ():
                 if successfulSave == True:
                     uploaded = uploaded + 1
         if uploaded >0:
-            subprocess.call(["Python", "Alignment.py", app.config["t2_UPLOADS"], app.config["adc_UPLOADS"], app.config["highb_UPLOADS"], app.config["ALIGNED"]])
+            subprocess.call(["python", "Alignment.py", app.config["t2_UPLOADS"], app.config["adc_UPLOADS"], app.config["highb_UPLOADS"], app.config["ALIGNED"]])
             image_list = makeJPGs(app.config["adc_ALIGN"], app.config["adc_JPG"])
             image_list.append(makeJPGs(app.config["highb_ALIGN"], app.config["highb_JPG"]))
             image_list.append(makeJPGs(app.config["t2_ALIGN"], app.config["t2_JPG"]))
