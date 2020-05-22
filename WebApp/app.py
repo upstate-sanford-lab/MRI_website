@@ -85,7 +85,6 @@ def cleanup(images, append, isolateFile):
             images[count] = os.path.split(image)[1]
         elif 'static' in images[count]:
             images[count] = append + image.split('static')[1]
-            print("Cleaned up file name: " + images[count])
         else:
             print("unable to locate 'static' in file path")
         count = count + 1
