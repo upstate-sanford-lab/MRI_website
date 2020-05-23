@@ -23,7 +23,7 @@ def gather_files(path, type, wholeDIR):
                     List.append(os.path.join(dirName,filename))
     return List
 
-def makeJPGs(DCM_location, JPG_location):
+def makeJPGs(DCM_location, JPG_location, windowing):
     '''Takes a folder DCM_location, converts dcm into jpg, and saves files in JPG_location'''
     saved_file_list = []
     for s in os.listdir(DCM_location):
@@ -32,7 +32,17 @@ def makeJPGs(DCM_location, JPG_location):
             if ".dcm" in s.lower():  # check whether the file is DICOM
                 ds = dicom.dcmread(os.path.join(DCM_location, s))
                 ps = ds.pixel_array.astype(float)
-                pixels = (np.maximum(ps, 0) / ps.max()) * 255.0 #problem : divide by zero when ps.max() = 0
+                if windowing == True:
+                    # for highb series
+                    pixels = ((ps - ps.min()) * (1/(ps.max() - ps.min()) * 255))
+                    # apply mask and rescale array to 0-255
+                    #masked_image_wp = math_img("img1 * img2", img1=nii_img, img2=wp_mask)
+                    #nii_rescaled = math_img("((img1 - img1.min()) * (1/(img1.max() - img1.min()) * 255))", img1=masked_image_wp)
+                else:
+                    if ps.max() == 0:
+                        pixels = (np.maximum(ps, 0)) * 255.0
+                    else:
+                        pixels = (np.maximum(ps, 0) / ps.max()) * 255.0
                 pixels = np.uint8(pixels)
                 s = s.replace('.dcm', '.jpg')
 
@@ -42,7 +52,7 @@ def makeJPGs(DCM_location, JPG_location):
                     'Slice was either aligned already or it was a scout view'
 
                 cv2.imwrite(os.path.join(JPG_location, s), pixels)
-                saved_file_list.append(os.path.join("static\JPG_converts", s))
+                saved_file_list.append(os.path.join("static","JPG_converts", s))
         except:
             print("Could not convert: " + s)
     return saved_file_list
