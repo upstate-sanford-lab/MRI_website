@@ -7,6 +7,82 @@ import os
 import cv2
 import natsort
 import subprocess
+'''
+from werkzeug.datastructures import ImmutableMultiDict
+import json
+import matplotlib.pyplot as plt
+from skimage import measure
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import scipy.ndimage
+from matplotlib import pyplot
+import scipy.ndimage as ndi
+from pydicom.data import get_testdata_files
+import pandas as pd
+'''
+
+# def plot_slice(slice):
+#     '''NOT CURRENLTY USED. Create a plot for a given slice'''
+#     plt.imshow(slice.pixel_array, cmap=plt.cm.bone)
+#     plt.show()
+#
+# def sample_stack(stack, rows=3, cols=3):
+#     'NOT CURRENTLY USED. Plots a stack of dicoms in a grid format'
+#     fig, ax = plt.subplots(rows, cols, figsize=[12, 12])
+#     sqrt(stack.shape[3])
+#     for ind in range(rows * cols):
+#         ax[int(i / rows), int(i % rows)].set_title('slice %d' % ind)
+#         ax[int(i / rows), int(i % rows)].imshow(stack[ind], cmap='gray')
+#         ax[int(i / rows), int(i % rows)].axis('off')
+#     plt.show()
+#
+# def plot_3d(image, threshold=-300):
+#     '''NOT CURRENTLY USED. Provides a 3D rendering of a stack of images'''
+#
+#     verts, faces = measure.marching_cubes(image, threshold)
+#
+#     fig = plt.figure(figsize=(10, 10))
+#     ax = fig.add_subplot(111, projection='3d')
+#
+#     # Fancy indexing: `verts[faces]` to generate a collection of triangles
+#     mesh = Poly3DCollection(verts[faces], alpha=0.70)
+#     face_color = [0.45, 0.45, 0.75]
+#     mesh.set_facecolor(face_color)
+#     ax.add_collection3d(mesh)
+#
+#     ax.set_xlim(0, p.shape[0])
+#     ax.set_ylim(0, p.shape[1])
+#     ax.set_zlim(0, p.shape[2])
+#
+#     plt.show()
+#
+# def load_scan(path):
+#     '''NOT CURRENTLY USED. Return a list of parsed dcm files from a designated folder "path"'''
+#     slices = []
+#     for s in os.listdir(path):
+#         if ".dcm" in s.lower():  # check whether the file is DICOM
+#             ds = dicom.dcmread(os.path.join(path,s))
+#         slices.append(ds)
+#         slices.sort(key=lambda x: float(x.ImagePositionPatient[2]))
+#
+#     try:
+#         slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
+#     except:
+#         slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
+#
+#     for s in slices:
+#         s.SliceThickness = slice_thickness
+#
+#     return slices
+#
+# def get_pixels(slices):
+#     '''Convert a list of parsed dicom images into a stack of pixel arrays'''
+#     pixStack = []
+#     for slice in slices:
+#         ps = slice.pixel_array.astype(float)
+#         pixels = (np.maximum(ps, 0) / ps.max()) * 255.0
+#         pixels = np.uint8(pixels)
+#         pixStack.append(pixels)
+#     return np.array(pixStack)
 
 def gather_files(path, type, wholeDIR):
     '''Return a list of directories containing files of a
@@ -96,7 +172,7 @@ def cleanup(images, append, isolateFile):
         elif 'static' in images[count]:
             images[count] = append + image.split('static')[1]
         else:
-            print("unable to locate 'static' in file path")
+            print("unable locate 'static' in file path")
         count = count + 1
     return [images,count]
 
@@ -142,9 +218,9 @@ def index ():
                     uploaded = uploaded + 1
         if uploaded >0:
             subprocess.call(["Python", "Alignment.py", app.config["t2_uploads"], app.config["adc_uploads"], app.config["highb_uploads"], app.config["Aligned_DICOM"]])
-            image_list = makeJPGs(app.config["adc_Aligned_DICOM"], app.config["adc_JPG_converts"])
-            image_list.append(makeJPGs(app.config["highb_Aligned_DICOM"], app.config["highb_JPG_converts"]))
-            image_list.append(makeJPGs(app.config["t2_Aligned_DICOM"], app.config["t2_JPG_converts"]))
+            image_list = makeJPGs(app.config["adc_Aligned_DICOM"], app.config["adc_JPG_converts"], False)
+            image_list.append(makeJPGs(app.config["highb_Aligned_DICOM"], app.config["highb_JPG_converts"], True))
+            image_list.append(makeJPGs(app.config["t2_Aligned_DICOM"], app.config["t2_JPG_converts"], False))
             print("the following images have been saved as jpgs")
             print(image_list)
         else:
@@ -193,8 +269,23 @@ def api_receiveMarkup():
                 markup[slice]['y'].append(int(data['y'].split(", ")[i]))
             i = i+1
         print(markup)
-        subprocess.call(["Python", "predict.py", markup])
+        subprocess.call(["Python", "predict.py"])
     return "this is your PIRAD score! - message from server def api_receiveMarkup()"
+
+
+# @app.route('/api/pixels')
+# def api_get_pixels():
+#     adc = []
+#     highb = []
+#     t2 = []
+#     for file in natsort.natsorted(cleanup(gather_files(app.config["adc_uploads"], ".dcm", False))[0]):
+#         adc.append(dicom.dcmread(file))
+#     for file in natsort.natsorted(cleanup(gather_files(app.config["highb_uploads"], ".dcm", False))[0]):
+#         highb.append(dicom.dcmread(file))
+#     for file in natsort.natsorted(cleanup(gather_files(app.config["t2_uploads"], ".dcm", False))[0]):
+#         t2.append(dicom.dcmread(file))
+#     return jsonify(adc = get_pixels(adc).tolist(), highb = get_pixels(highb).tolist(), t2 = get_pixels(t2).tolist())
+
 
 if __name__ == "__main__":
     app.run(debug = True)
