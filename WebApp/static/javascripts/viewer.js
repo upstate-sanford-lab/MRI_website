@@ -34,7 +34,7 @@ $(document).ready(function(){
     t2[0] = new Image();
     t2[0].src = 'static/placeholder.png';
 
-    $(document.getElementsByClassName("subdiv")).on( 'mousewheel DOMMouseScroll', function (e) {
+    $(document.getElementsByClassName("window")).on( 'mousewheel DOMMouseScroll', function (e) {
       var e0 = e.originalEvent;
       var delta = e0.wheelDelta || -e0.detail;
 
@@ -96,9 +96,9 @@ $(document).ready(function(){
     });
 
     function init(c,ctx){
+        c.addEventListener("wheel", Respondscroll);
         c.width = 384;
         c.height = 384;
-        c.addEventListener("wheel", Respondscroll);
     }
 
     function Respondscroll(event){
@@ -162,22 +162,30 @@ $(document).ready(function(){
     }
 
     function submitMarkup(){
+        var slices = "";
         var xcor = "";
         var ycor = "";
-
-        for(i=0;i<coordinates.length; i++)
+        var len = coordinates.length;
+        for(i=0;i< len-1; i++)
         {
-            if (coordinates[i].slice == imnum)
-            {
-
-                xcor = xcor + Math.round(coordinates[i].x-getOffset(c2).left).toString() + ", ";
-                ycor = ycor + Math.round(coordinates[i].y-getOffset(c2).top).toString() + ", ";
-            }
+            slices = slices + coordinates[i].slice + ", ";
+            xcor = xcor + Math.round(coordinates[i].x-getOffset(c2).left).toString() + ", ";
+            ycor = ycor + Math.round(coordinates[i].y-getOffset(c2).top).toString() + ", ";
         }
+        if(len>0)
+        {
+            slices = slices + coordinates[len-1].slice ;
+            xcor = xcor + Math.round(coordinates[len-1].x-getOffset(c2).left).toString();
+            ycor = ycor + Math.round(coordinates[len-1].y-getOffset(c2).top).toString();
+        }
+
+
         console.log(xcor);
         console.log(ycor);
 
-        $.ajax({type: 'POST', url: '/api/receiveMarkup', data: {slice: imnum, x: xcor, y: ycor},
+        $.ajax({type: 'POST',
+          url: '/api/receiveMarkup',
+          data: {primarySlice: imnum, slices: slices, x: xcor, y: ycor},
             success : function(server_message) {
                 alert(server_message);
                 console.log('success');
