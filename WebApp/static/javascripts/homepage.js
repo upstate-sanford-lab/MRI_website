@@ -4,7 +4,7 @@ $(document).ready(function(){
     const highb = document.getElementById("highb-list");
     const t2 = document.getElementById("t2-list");
     const updateButton = document.getElementById("updatelist");
-    const submitButton = document.getElementById("submit");
+    const submitButton = document.getElementById("uploadBtn");
 
     updateButton.addEventListener("click", getLists);
     submitButton.addEventListener("click", getLists);
