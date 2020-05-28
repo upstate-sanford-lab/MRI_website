@@ -1,64 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dicom Viewer </title>
+    <title> ARAP </title>
     <link rel = "stylesheet" href = "static/stylesheets/style.css">
-    <link rel = "stylesheet" href = "static/stylesheets/dropdown.css">
     <script src = "static/javascripts/jquery.js"></script>
     <script src = "static/javascripts/homepage.js"></script>
     <script src = "static/javascripts/viewer.js"></script>
 </head>
 <body>
-    <h1> Dicom Viewer Homepage</h1>
-    <ul class = "headerbarUL">
-        <li class = "headerbarLI"><a href="/Homepage">Home</a></li>
-        <li class = "headerbarLI"><a href="#news">News</a></li>
-        <li class = "headerbarLI"><a href="#contact">Contact</a></li>
-        <li class = "headerbarLI" style="float:right"><a class="active" href="#about">About</a></li>
-    </ul>
-    <br>
-
-    <form action="/Homepage" method="POST" enctype="multipart/form-data">
-        Select or drop Dicoms for Upload. Then select upload:
-        <br/><br/>
-        adc formatted images:
-        <input id = "adc" type="file"  name="adc" multiple = "" webkitdirectory="" directory=""/>
-        <br/><br/>
-
-        HighB formatted images:
-        <input id = "HighB" type="file"  name="highb" multiple = "" webkitdirectory="" directory=""/>
-        <br/><br/>
-
-        T2 formatted images:
-        <input id = "T2" type="file" name="t2" multiple = "" webkitdirectory="" directory=""/>
-        <br/><br/>
-
-        <button id = "submit" type="submit" name="submit"> UPLOAD</button>
-        <br/><br/>
-
-    </form>
-    <div class = "container">
-        <div class = "subdiv" id = div1>
-            <canvas class = "canvas" id="canvas1" ></canvas>
-            <p class = "label" id = "label1">This is where image information is appended</p>
-        </div>
-        <div class = "subdiv" id = div2>
-            <canvas class = "canvas" id="canvas2" ></canvas>
-            <p class = "label" id = "label2">This is where image information is appended</p>
-        </div>
-        <div class = "subdiv" id = div3>
-            <canvas class = "canvas" id="canvas3" ></canvas>
-            <p class = "label" id = "label3">This is where image information is appended</p>
-        </div>
-        <br>
-        <div>
-            <button class = "switch" id = "previous">&laquo Previous</button>
-            <button class = "switch" id = "next" style = "float: right">Next &raquo</button>
-            <button class = "editor" id = "clearMU" > Delete markups on slice </button>
-            <button class = "editor" id = "submitMU" > submit markup </button>
+    <div class = "Myheading">
+        <div class = "Mytitle_container">
+            <h1 class = "Mytitle"> Automated Risk Assessment of Prostate Lesions(Prototype)</h1>
         </div>
     </div>
-    <p> Click <a href = "{{ url_for('Viewer') }}"> here </a> to view dicom images </p>
+
+    <div class = "uploading">
+        <form action="/Homepage" method="POST" enctype="multipart/form-data">
+            <div class ="Myform">
+                Choose Dicom files for Upload. Then select:
+                <button id = "uploadBtn" type="submit" name="submit" > UPLOAD</button>
+                <br/><br/>
+                adc formatted images:
+                <input id = "adc" type="file"  name="adc" multiple = "" webkitdirectory="" directory=""/>
+                <br/><br/>
+
+                HighB formatted images:
+                <input id = "HighB" type="file"  name="highb" multiple = "" webkitdirectory="" directory=""/>
+                <br/><br/>
+
+                T2 formatted images:
+                <input id = "T2" type="file" name="t2" multiple = "" webkitdirectory="" directory=""/>
+            </div>
+        </form>
+        <div class = "userInfo_container">
+            <ul class = "userInfo">
+                <li id = "username"> {{username}} </li>
+                <li id = "logout"> logout </li>
+            </ul>
+        </div>
+    </div>
+    <div class = "viewPort">
+        <div class = "gridBox">
+            <div class = "box">
+                <div class = "window" id = div1>
+                    <canvas class = "canvas" id="canvas1" ></canvas>
+                </div>
+            </div>
+            <div class = "box">
+                <div class = "window" id = div2>
+                    <canvas class = "canvas" id="canvas2" ></canvas>
+                </div>
+            </div>
+            <div class = "box">
+                <div class = "window" id = div3>
+                    <canvas class = "canvas" id="canvas3" ></canvas>
+                </div>
+            </div>
+            <div class = "imageOutof">
+                    <p class = "label" id = "label1">This is where image information is appended</p>
+            </div>
+            <div class = "imageOutof">
+                    <p class = "label" id = "label2">This is where image information is appended</p>
+            </div>
+            <div class = "imageOutof">
+                    <p class = "label" id = "label3">This is where image information is appended</p>
+            </div>
+            <div class = "toolbar">
+                <button class = "switch" id = "previous">&laquo Previous</button>
+                <button class = "editor" id = "clearMU" > redo markup </button>
+                <button class = "editor" id = "submitMU" > submit markup </button>
+                <button class = "switch" id = "next">Next &raquo</button>
+            </div>
+        </div>
+
+    </div>
+
     <button id = "updatelist"> Update File Lists</button>
     <br/><br/>
     <p id = "adc-list" class = "fileList"> No files uploaded </p>
