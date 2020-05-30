@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.utils import secure_filename
 import pydicom as dicom
 import numpy as np
@@ -9,6 +9,8 @@ from PIL import Image
 import natsort
 import subprocess
 '''
+from flask_sqlalchemy import SQLAlchemy
+
 import cv2
 from werkzeug.datastructures import ImmutableMultiDict
 import json
@@ -174,18 +176,29 @@ def cleanup(images, append, isolateFile):
 
 def checkLogin(name, password):
     users = {"Tom": "prostate", "Andrew": "webdev"}
-    if users[name] == password:
-        return True
-    else:
-        return False
+    if name in users:
+        if users[name] == password:
+            return True
+    return False
 
 
 
 app = Flask(__name__)
 '''Usage: update basepath with the location of the WebApp folder'''
 basePath = r'C:\Users\MSStore'
-loggedIn = False
-user = "no one"
+app.config['SECRET_KEY'] = "supersecretkey34237439273874298"
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
+# db = SQLAlchemy(app)
+#
+# class users(db.Model):
+#     _id = db.Column("id", db.Integer, primary_key=True)
+#     username = db.Column(db.String(100))
+#     password = db.Column(db.String(100))
+#
+#     def __init__(self, name, password):
+#         self.name = name
+#         self.password = password
 
 for dir in ["uploads", "JPG_converts", "Aligned_DICOM", "jpg_tumor"]:
     app.config[dir] = os.path.join(basePath, "WebApp", "static", dir)
@@ -197,15 +210,10 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'dcm'}
 @app.route('/', methods = ["GET", "POST"])
 @app.route('/Homepage', methods = ["GET", "POST"])
 def index():
-    global loggedIn
-    if loggedIn == False:
-        return redirect(url_for("login"))
+    if "user" not in session:
         print("redirected to login from homepage")
-        print(loggedIn)
-    else:
-        for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
-            clearFiles(app.config[folder])
-
+        return redirect(url_for("login"))
+    elif session["loggedIn"] == True:
         uploaded = 0
         if request.method == 'POST':
             print(request.files)
@@ -232,8 +240,10 @@ def index():
                 print(imagelist)
             else:
                 print("no files were uploaded")
-        global user
-        return render_template("PIRADS_webAI.html", username = user)
+        user = session["user"]
+        return render_template("PIRADS_webAI.html", username=user)
+    else:
+        print("Error")
 
 # @app.route('/uploads/<filename>')
 # def uploaded_file(filename):
@@ -247,15 +257,26 @@ def index():
 def login():
     if request.method == "POST":
         print("attempt for login")
-        if checkLogin(request.form["username"], request.form["password"]):
-            global user
-            global loggedIn
-            loggedIn = True
-            user = request.form["username"]
+        username = request.form["username"]
+        password = request.form["password"]
+        if checkLogin(username, password):
+            session["user"] = request.form["username"]
+            session["loggedIn"] = True
+            print("logged in")
             return redirect(url_for("index"))
-
+    if "user" and "loggedIn" in session:
+        if session["loggedIn"] ==  True:
+            print("already logged in")
+            return redirect(url_for("index"))
     return render_template("login.html")
 
+@app.route("/logout")
+def logout():
+    for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
+        clearFiles(app.config[folder])
+    session.pop("user")
+    session.pop("loggedIn")
+    return redirect(url_for("login"))
 
 @app.route('/api/images')
 def api_get_images():
@@ -264,13 +285,6 @@ def api_get_images():
     highb = cleanup(gather_files(app.config["highb_JPG_converts"], ".jpg", False),'static', False)[0]
     t2 = cleanup(gather_files(app.config["t2_JPG_converts"], ".jpg", False),'static', False)[0]
     return jsonify(adc = natsort.natsorted(adc), highb = natsort.natsorted(highb), t2 = natsort.natsorted(t2))
-
-@app.route('/api/imagelist')
-def api_get_imagelist():
-    adc = cleanup(gather_files(app.config["adc_uploads"], ".dcm", False),"", True)
-    highb = cleanup(gather_files(app.config["highb_uploads"], ".dcm", False),"", True)
-    t2 = cleanup(gather_files(app.config["t2_uploads"], ".dcm", False),"", True)
-    return jsonify(adc = adc, highb = highb, t2 = t2)
 
 @app.route('/api/receiveMarkup', methods = ['POST'])
 def api_receiveMarkup():
@@ -292,6 +306,12 @@ def api_receiveMarkup():
         subprocess.call(["Python", "predict.py"])
     return "this is your PIRAD score! - message from server def api_receiveMarkup()"
 
+# @app.route('/api/imagelist')
+# def api_get_imagelist():
+#     adc = cleanup(gather_files(app.config["adc_uploads"], ".dcm", False),"", True)
+#     highb = cleanup(gather_files(app.config["highb_uploads"], ".dcm", False),"", True)
+#     t2 = cleanup(gather_files(app.config["t2_uploads"], ".dcm", False),"", True)
+#     return jsonify(adc = adc, highb = highb, t2 = t2)
 
 # @app.route('/api/pixels')
 # def api_get_pixels():
@@ -308,5 +328,6 @@ def api_receiveMarkup():
 
 
 if __name__ == "__main__":
+    #db.create_all()
     app.run(debug = True)
     
