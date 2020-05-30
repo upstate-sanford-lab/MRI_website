@@ -1,3 +1,4 @@
+/* css for the title and user login buttons */
 .Myheading{
     padding-left: 5px;
     box-sizing: border-box;
@@ -16,7 +17,6 @@
     font-family: Arial, Helvetica, sans-serif;
     font-weight: bold;
     text-align: left;
-    text-color: #0000FF;
     height: center;
 }
 .userInfo {
@@ -32,7 +32,9 @@
     display: inline;
     padding: 10px;
 }
-
+.userInfo li a {
+    color: #0000FF;
+}
 /* css for the uloading forms and file lists */
 .uploading {
     padding-left: 5px;
@@ -55,16 +57,23 @@
     float: right;
     display: none;
 }
-#updatelist{
-    display: none;
-}
+
 .userInfo_container{
     border: 1px solid black;
     background-color: #B0B0B0;
     position: absolute;
     top: 10px;
     right: 10px;
-
+}
+a {
+    color: #000000;
+    font-style: italic;
+    text-decoration: none;
+    cursor: pointer;
+}
+a:hover {
+    color: blue;
+    text-decoration: underline;
 }
 /* css for the dicom viewports
 -----------------------------------------------------------------------------------------------------------------------
