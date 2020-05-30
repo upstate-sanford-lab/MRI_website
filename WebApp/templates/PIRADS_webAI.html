@@ -4,7 +4,6 @@
     <title> ARAP </title>
     <link rel = "stylesheet" href = "static/stylesheets/style.css">
     <script src = "static/javascripts/jquery.js"></script>
-    <script src = "static/javascripts/homepage.js"></script>
     <script src = "static/javascripts/viewer.js"></script>
 </head>
 <body>
@@ -34,8 +33,8 @@
         </form>
         <div class = "userInfo_container">
             <ul class = "userInfo">
-                <li id = "username"> {{username}} </li>
-                <li id = "logout"> logout </li>
+                <li id = "username"> {{username}}: </li>
+                <li> <a href="http://127.0.0.1:5000/logout" style = "color: black"> Logout </a> </li>
             </ul>
         </div>
     </div>
@@ -72,14 +71,13 @@
                 <button class = "switch" id = "next">Next &raquo</button>
             </div>
         </div>
-
     </div>
 
-    <button id = "updatelist"> Update File Lists</button>
-    <br/><br/>
-    <p id = "adc-list" class = "fileList"> No files uploaded </p>
-    <p id = "highb-list" class = "fileList"> No files uploaded </p>
-    <p id = "t2-list" class = "fileList"> No files uploaded </p>
+<!--    <button id = "updatelist"> Update File Lists</button>-->
+<!--    <br/><br/>-->
+<!--    <p id = "adc-list" class = "fileList"> No files uploaded </p>-->
+<!--    <p id = "highb-list" class = "fileList"> No files uploaded </p>-->
+<!--    <p id = "t2-list" class = "fileList"> No files uploaded </p>-->
 
 </body>
 </html>
