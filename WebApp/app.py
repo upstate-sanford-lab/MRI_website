@@ -201,49 +201,59 @@ app.config['SECRET_KEY'] = "supersecretkey34237439273874298"
 #         self.password = password
 
 for dir in ["uploads", "JPG_converts", "Aligned_DICOM", "jpg_tumor"]:
-    app.config[dir] = os.path.join(basePath, "WebApp", "static", dir)
+    path = os.path.join(basePath, "WebApp", "static", dir)
+    app.config[dir] = path
+    if not os.path.exists(path):
+        os.mkdir(path)
+        print("made directory: " + path)
     for series in ["t2", "adc", "highb"]:
-        app.config[series + "_" + dir] = os.path.join(basePath, "WebApp", "static", dir, series)
+        path = os.path.join(basePath, "WebApp", "static", dir, series)
+        app.config[series + "_" + dir] = path
+        if not os.path.exists(path):
+            os.mkdir(path)
+            print("made directory: " + path)
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'dcm'}
 @app.route('/', methods = ["GET", "POST"])
 @app.route('/Homepage', methods = ["GET", "POST"])
 def index():
-    if "user" not in session:
-        print("redirected to login from homepage")
-        return redirect(url_for("login"))
-    elif session["loggedIn"] == True:
-        uploaded = 0
-        if request.method == 'POST':
-            print(request.files)
-            for filetype in ["adc", "highb", "t2"]:
-                for file in request.files.getlist(filetype):
-                    successfulSave = False
-                    if file and allowed_file(file.filename):
-                        filename = secure_filename(file.filename)
-                        successfulSave = SaveSeries(file,filename,filetype)
-                    elif not allowed_file(file.filename):
-                        print(file.filename)
-                        print("Not allowed file type")
-                    else:
-                        print(file.filename)
-                        print("No file part")
-                    if successfulSave == True:
-                        uploaded = uploaded + 1
-            if uploaded >0:
-                imagelist = [];
-                subprocess.call(["Python", "Alignment.py", app.config["t2_uploads"], app.config["adc_uploads"], app.config["highb_uploads"], app.config["Aligned_DICOM"]])
-                for series in ["adc", "highb", "t2"]:
-                    imagelist.append(makeJPGs(app.config[series + "_Aligned_DICOM"], app.config[series+"_JPG_converts"], series))
-                print("the following images have been saved as jpgs")
-                print(imagelist)
-            else:
-                print("no files were uploaded")
-        user = session["user"]
-        return render_template("PIRADS_webAI.html", username=user)
-    else:
-        print("Error")
+    if all(key in session for key in ('loggedIn', 'user')):
+        if session["loggedIn"] == True:
+            uploaded = 0
+            if request.method == 'POST':
+                for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
+                    clearFiles(app.config[folder])
+                for filetype in ["adc", "highb", "t2"]:
+                    for file in request.files.getlist(filetype):
+                        successfulSave = False
+                        if file and allowed_file(file.filename):
+                            filename = secure_filename(file.filename)
+                            successfulSave = SaveSeries(file,filename,filetype)
+                        elif not allowed_file(file.filename):
+                            print(file.filename)
+                            print("Not allowed file type")
+                        else:
+                            print(file.filename)
+                            print("No file part")
+                        if successfulSave == True:
+                            uploaded = uploaded + 1
+                if uploaded >0:
+                    imagelist = [];
+                    for series in ["adc", "highb", "t2"]:
+                        subprocess.call(["Python", "anonymize.py", app.config[series+"_uploads"]])
+                    subprocess.call(["Python", "Alignment.py", app.config["t2_uploads"], app.config["adc_uploads"], app.config["highb_uploads"], app.config["Aligned_DICOM"]])
+                    for series in ["adc", "highb", "t2"]:
+                        imagelist.append(makeJPGs(app.config[series + "_Aligned_DICOM"], app.config[series+"_JPG_converts"], series))
+                    print("the following images have been anonymized, aligned, and saved as JPGs")
+                    print(imagelist)
+                else:
+                    print("no files were uploaded")
+            user = session["user"]
+            return render_template("PIRADS_webAI.html", username=user)
+
+    print("redirected to login from homepage")
+    return redirect(url_for("login"))
 
 # @app.route('/uploads/<filename>')
 # def uploaded_file(filename):
@@ -264,8 +274,8 @@ def login():
             session["loggedIn"] = True
             print("logged in")
             return redirect(url_for("index"))
-    if "user" and "loggedIn" in session:
-        if session["loggedIn"] ==  True:
+    if all(key in session for key in ('loggedIn', 'user')):
+        if session["loggedIn"] == True:
             print("already logged in")
             return redirect(url_for("index"))
     return render_template("login.html")
@@ -281,37 +291,46 @@ def logout():
 @app.route('/api/images')
 def api_get_images():
     '''Sends list of uploaded files to webpage'''
-    adc = cleanup(gather_files(app.config["adc_JPG_converts"], ".jpg", False),'static', False)[0]
-    highb = cleanup(gather_files(app.config["highb_JPG_converts"], ".jpg", False),'static', False)[0]
-    t2 = cleanup(gather_files(app.config["t2_JPG_converts"], ".jpg", False),'static', False)[0]
-    return jsonify(adc = natsort.natsorted(adc), highb = natsort.natsorted(highb), t2 = natsort.natsorted(t2))
+    if all(key in session for key in ('loggedIn', 'user')):
+        if session["loggedIn"] == True:
+            adc = cleanup(gather_files(app.config["adc_JPG_converts"], ".jpg", False),'static', False)[0]
+            highb = cleanup(gather_files(app.config["highb_JPG_converts"], ".jpg", False),'static', False)[0]
+            t2 = cleanup(gather_files(app.config["t2_JPG_converts"], ".jpg", False),'static', False)[0]
+            return jsonify(adc = natsort.natsorted(adc), highb = natsort.natsorted(highb), t2 = natsort.natsorted(t2))
+    return redirect(url_for("login"))
 
 @app.route('/api/receiveMarkup', methods = ['POST'])
 def api_receiveMarkup():
-    if request.method == 'POST':
-        data = request.form.to_dict(flat=True)
-        print(data)
-        markup = {'primarySlice': int(data['primarySlice'])}
-        i = 0
-        for slice in data['slices'].split(", "):
-            if slice in markup.keys():
-                markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-            else:
-                markup[slice] = { 'x': [], 'y': []}
-                markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-            i = i+1
-        print(markup)
-        subprocess.call(["Python", "predict.py"])
-    return "this is your PIRAD score! - message from server def api_receiveMarkup()"
+    if all(key in session for key in ('loggedIn', 'user')):
+        if session["loggedIn"] == True:
+            if request.method == 'POST':
+                data = request.form.to_dict(flat=True)
+                print(data)
+                markup = {'primarySlice': int(data['primarySlice'])}
+                i = 0
+                for slice in data['slices'].split(", "):
+                    if slice in markup.keys():
+                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+                    else:
+                        markup[slice] = { 'x': [], 'y': []}
+                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+                    i = i+1
+                print(markup)
+                subprocess.call(["Python", "predict.py"])
+                return "score calculated..."
+    return redirect(url_for("login"))
 
 # @app.route('/api/imagelist')
 # def api_get_imagelist():
-#     adc = cleanup(gather_files(app.config["adc_uploads"], ".dcm", False),"", True)
-#     highb = cleanup(gather_files(app.config["highb_uploads"], ".dcm", False),"", True)
-#     t2 = cleanup(gather_files(app.config["t2_uploads"], ".dcm", False),"", True)
-#     return jsonify(adc = adc, highb = highb, t2 = t2)
+#     if all(key in session for key in ('loggedIn', 'user')):
+#         if session["loggedIn"] == True:
+#             adc = cleanup(gather_files(app.config["adc_uploads"], ".dcm", False),"", True)
+#             highb = cleanup(gather_files(app.config["highb_uploads"], ".dcm", False),"", True)
+#             t2 = cleanup(gather_files(app.config["t2_uploads"], ".dcm", False),"", True)
+#             return jsonify(adc = adc, highb = highb, t2 = t2)
+#    return redirect(url_for("login"))
 
 # @app.route('/api/pixels')
 # def api_get_pixels():
