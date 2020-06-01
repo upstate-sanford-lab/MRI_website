@@ -1,11 +1,11 @@
 
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 import pydicom as dicom
 import numpy as np
 import os
 from PIL import Image
-
+from functools import wraps
 import natsort
 import subprocess
 '''
@@ -167,10 +167,10 @@ def cleanup(images, append, isolateFile):
     for image in images:
         if isolateFile == True:
             images[count] = os.path.split(image)[1]
-        elif 'static' in images[count]:
-            images[count] = append + image.split('static')[1]
+        elif 'protected' in images[count]:
+            images[count] = append + image.split('protected')[1]
         else:
-            print("unable locate 'static' in file path")
+            print("unable locate 'protected' in file path")
         count = count + 1
     return [images,count]
 
@@ -182,11 +182,11 @@ def checkLogin(name, password):
     return False
 
 
-
-app = Flask(__name__)
 '''Usage: update basepath with the location of the WebApp folder'''
 basePath = r'C:\Users\MSStore'
+app = Flask(__name__, instance_path = os.path.join(basePath,'WebApp','protected'))
 app.config['SECRET_KEY'] = "supersecretkey34237439273874298"
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'dcm'}
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
 # db = SQLAlchemy(app)
@@ -201,59 +201,75 @@ app.config['SECRET_KEY'] = "supersecretkey34237439273874298"
 #         self.password = password
 
 for dir in ["uploads", "JPG_converts", "Aligned_DICOM", "jpg_tumor"]:
-    path = os.path.join(basePath, "WebApp", "static", dir)
+    path = os.path.join(basePath, "WebApp", "protected", dir)
     app.config[dir] = path
     if not os.path.exists(path):
         os.mkdir(path)
         print("made directory: " + path)
     for series in ["t2", "adc", "highb"]:
-        path = os.path.join(basePath, "WebApp", "static", dir, series)
+        path = os.path.join(basePath, "WebApp", "protected", dir, series)
         app.config[series + "_" + dir] = path
         if not os.path.exists(path):
             os.mkdir(path)
             print("made directory: " + path)
 
+def personal_files(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if session["user"] == "Andrew":
+            return f(*args, **kwargs)
+        else:
+            print("user not Andrew, redirected to index")
+            return redirect(url_for('index'))
+    return wrap
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'dcm'}
+def login_required(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if all(key in session for key in ('loggedIn', 'user')):
+            if session["loggedIn"] == True:
+                return f(*args, **kwargs)
+        else:
+            print("need to login first")
+            return redirect(url_for('login'))
+    return wrap
+
 @app.route('/', methods = ["GET", "POST"])
 @app.route('/Homepage', methods = ["GET", "POST"])
+@login_required
 def index():
-    if all(key in session for key in ('loggedIn', 'user')):
-        if session["loggedIn"] == True:
-            uploaded = 0
-            if request.method == 'POST':
-                for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
-                    clearFiles(app.config[folder])
-                for filetype in ["adc", "highb", "t2"]:
-                    for file in request.files.getlist(filetype):
-                        successfulSave = False
-                        if file and allowed_file(file.filename):
-                            filename = secure_filename(file.filename)
-                            successfulSave = SaveSeries(file,filename,filetype)
-                        elif not allowed_file(file.filename):
-                            print(file.filename)
-                            print("Not allowed file type")
-                        else:
-                            print(file.filename)
-                            print("No file part")
-                        if successfulSave == True:
-                            uploaded = uploaded + 1
-                if uploaded >0:
-                    imagelist = [];
-                    for series in ["adc", "highb", "t2"]:
-                        subprocess.call(["Python", "anonymize.py", app.config[series+"_uploads"]])
-                    subprocess.call(["Python", "Alignment.py", app.config["t2_uploads"], app.config["adc_uploads"], app.config["highb_uploads"], app.config["Aligned_DICOM"]])
-                    for series in ["adc", "highb", "t2"]:
-                        imagelist.append(makeJPGs(app.config[series + "_Aligned_DICOM"], app.config[series+"_JPG_converts"], series))
-                    print("the following images have been anonymized, aligned, and saved as JPGs")
-                    print(imagelist)
+    uploaded = 0
+    if request.method == 'POST':
+        for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
+            clearFiles(app.config[folder])
+        for filetype in ["adc", "highb", "t2"]:
+            for file in request.files.getlist(filetype):
+                successfulSave = False
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    successfulSave = SaveSeries(file,filename,filetype)
+                elif not allowed_file(file.filename):
+                    print(file.filename)
+                    print("Not allowed file type")
                 else:
-                    print("no files were uploaded")
-            user = session["user"]
-            return render_template("PIRADS_webAI.html", username=user)
+                    print(file.filename)
+                    print("No file part")
+                if successfulSave == True:
+                    uploaded = uploaded + 1
+        if uploaded >0:
+            imagelist = [];
+            for series in ["adc", "highb", "t2"]:
+                subprocess.call(["Python", "anonymize.py", app.config[series+"_uploads"]])
+            subprocess.call(["Python", "Alignment.py", app.config["t2_uploads"], app.config["adc_uploads"], app.config["highb_uploads"], app.config["Aligned_DICOM"]])
+            for series in ["adc", "highb", "t2"]:
+                imagelist.append(makeJPGs(app.config[series + "_Aligned_DICOM"], app.config[series+"_JPG_converts"], series))
+            print("the following images have been anonymized, aligned, and saved as JPGs")
+            print(imagelist)
+        else:
+            print("no files were uploaded")
+    user = session["user"]
+    return render_template("PIRADS_webAI.html", username=user)
 
-    print("redirected to login from homepage")
-    return redirect(url_for("login"))
 
 # @app.route('/uploads/<filename>')
 # def uploaded_file(filename):
@@ -280,7 +296,9 @@ def login():
             return redirect(url_for("index"))
     return render_template("login.html")
 
+
 @app.route("/logout")
+@login_required
 def logout():
     for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
         clearFiles(app.config[folder])
@@ -289,39 +307,45 @@ def logout():
     return redirect(url_for("login"))
 
 @app.route('/api/images')
+@login_required
 def api_get_images():
     '''Sends list of uploaded files to webpage'''
-    if all(key in session for key in ('loggedIn', 'user')):
-        if session["loggedIn"] == True:
-            adc = cleanup(gather_files(app.config["adc_JPG_converts"], ".jpg", False),'static', False)[0]
-            highb = cleanup(gather_files(app.config["highb_JPG_converts"], ".jpg", False),'static', False)[0]
-            t2 = cleanup(gather_files(app.config["t2_JPG_converts"], ".jpg", False),'static', False)[0]
-            return jsonify(adc = natsort.natsorted(adc), highb = natsort.natsorted(highb), t2 = natsort.natsorted(t2))
-    return redirect(url_for("login"))
+    adc = cleanup(gather_files(app.config["adc_JPG_converts"], ".jpg", False),'protected', False)[0]
+    highb = cleanup(gather_files(app.config["highb_JPG_converts"], ".jpg", False),'protected', False)[0]
+    t2 = cleanup(gather_files(app.config["t2_JPG_converts"], ".jpg", False),'protected', False)[0]
+    return jsonify(adc = natsort.natsorted(adc), highb = natsort.natsorted(highb), t2 = natsort.natsorted(t2))
 
 @app.route('/api/receiveMarkup', methods = ['POST'])
+@login_required
 def api_receiveMarkup():
-    if all(key in session for key in ('loggedIn', 'user')):
-        if session["loggedIn"] == True:
-            if request.method == 'POST':
-                data = request.form.to_dict(flat=True)
-                print(data)
-                markup = {'primarySlice': int(data['primarySlice'])}
-                i = 0
-                for slice in data['slices'].split(", "):
-                    if slice in markup.keys():
-                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-                    else:
-                        markup[slice] = { 'x': [], 'y': []}
-                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-                    i = i+1
-                print(markup)
-                subprocess.call(["Python", "predict.py"])
-                return "score calculated..."
-    return redirect(url_for("login"))
+    if request.method == 'POST':
+        data = request.form.to_dict(flat=True)
+        print(data)
+        markup = {'primarySlice': int(data['primarySlice'])}
+        i = 0
+        for slice in data['slices'].split(", "):
+            if slice in markup.keys():
+                markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+            else:
+                markup[slice] = { 'x': [], 'y': []}
+                markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+            i = i+1
+        print(markup)
+        subprocess.call(["Python", "predict.py"])
+        return "score calculated..."
+    else:
+        return "Error: submitted GET request. POST request required"
 
+@app.route('/protected/<path:filename>')
+@login_required
+@personal_files
+def protected(filename):
+    try:
+        return send_from_directory(os.path.join(app.instance_path,''), filename)
+    except Exception as e:
+        return redirect(url_for("index"))
 # @app.route('/api/imagelist')
 # def api_get_imagelist():
 #     if all(key in session for key in ('loggedIn', 'user')):
