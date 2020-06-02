@@ -8,85 +8,6 @@ from PIL import Image
 from functools import wraps
 import natsort
 import subprocess
-'''
-from flask_sqlalchemy import SQLAlchemy
-
-import cv2
-from werkzeug.datastructures import ImmutableMultiDict
-import json
-import matplotlib.pyplot as plt
-from skimage import measure
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import scipy.ndimage
-from matplotlib import pyplot
-import scipy.ndimage as ndi
-from pydicom.data import get_testdata_files
-import pandas as pd
-'''
-
-# def plot_slice(slice):
-#     '''NOT CURRENLTY USED. Create a plot for a given slice'''
-#     plt.imshow(slice.pixel_array, cmap=plt.cm.bone)
-#     plt.show()
-#
-# def sample_stack(stack, rows=3, cols=3):
-#     'NOT CURRENTLY USED. Plots a stack of dicoms in a grid format'
-#     fig, ax = plt.subplots(rows, cols, figsize=[12, 12])
-#     sqrt(stack.shape[3])
-#     for ind in range(rows * cols):
-#         ax[int(i / rows), int(i % rows)].set_title('slice %d' % ind)
-#         ax[int(i / rows), int(i % rows)].imshow(stack[ind], cmap='gray')
-#         ax[int(i / rows), int(i % rows)].axis('off')
-#     plt.show()
-#
-# def plot_3d(image, threshold=-300):
-#     '''NOT CURRENTLY USED. Provides a 3D rendering of a stack of images'''
-#
-#     verts, faces = measure.marching_cubes(image, threshold)
-#
-#     fig = plt.figure(figsize=(10, 10))
-#     ax = fig.add_subplot(111, projection='3d')
-#
-#     # Fancy indexing: `verts[faces]` to generate a collection of triangles
-#     mesh = Poly3DCollection(verts[faces], alpha=0.70)
-#     face_color = [0.45, 0.45, 0.75]
-#     mesh.set_facecolor(face_color)
-#     ax.add_collection3d(mesh)
-#
-#     ax.set_xlim(0, p.shape[0])
-#     ax.set_ylim(0, p.shape[1])
-#     ax.set_zlim(0, p.shape[2])
-#
-#     plt.show()
-#
-# def load_scan(path):
-#     '''NOT CURRENTLY USED. Return a list of parsed dcm files from a designated folder "path"'''
-#     slices = []
-#     for s in os.listdir(path):
-#         if ".dcm" in s.lower():  # check whether the file is DICOM
-#             ds = dicom.dcmread(os.path.join(path,s))
-#         slices.append(ds)
-#         slices.sort(key=lambda x: float(x.ImagePositionPatient[2]))
-#
-#     try:
-#         slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
-#     except:
-#         slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
-#
-#     for s in slices:
-#         s.SliceThickness = slice_thickness
-#
-#     return slices
-#
-# def get_pixels(slices):
-#     '''Convert a list of parsed dicom images into a stack of pixel arrays'''
-#     pixStack = []
-#     for slice in slices:
-#         ps = slice.pixel_array.astype(float)
-#         pixels = (np.maximum(ps, 0) / ps.max()) * 255.0
-#         pixels = np.uint8(pixels)
-#         pixStack.append(pixels)
-#     return np.array(pixStack)
 
 def gather_files(path, type, wholeDIR):
     '''Return a list of directories containing files of a
@@ -183,31 +104,19 @@ def checkLogin(name, password):
 
 
 '''Usage: update basepath with the location of the WebApp folder'''
-basePath = r'C:\Users\MSStore'
-app = Flask(__name__, instance_path = os.path.join(basePath,'WebApp','protected'))
+basePath = os.getcwd()
+app = Flask(__name__, instance_path = os.path.join(basePath,'protected'))
 app.config['SECRET_KEY'] = "supersecretkey34237439273874298"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'dcm'}
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
-# db = SQLAlchemy(app)
-#
-# class users(db.Model):
-#     _id = db.Column("id", db.Integer, primary_key=True)
-#     username = db.Column(db.String(100))
-#     password = db.Column(db.String(100))
-#
-#     def __init__(self, name, password):
-#         self.name = name
-#         self.password = password
-
 for dir in ["uploads", "JPG_converts", "Aligned_DICOM", "jpg_tumor"]:
-    path = os.path.join(basePath, "WebApp", "protected", dir)
+    path = os.path.join(basePath, "protected", dir)
     app.config[dir] = path
     if not os.path.exists(path):
         os.mkdir(path)
         print("made directory: " + path)
     for series in ["t2", "adc", "highb"]:
-        path = os.path.join(basePath, "WebApp", "protected", dir, series)
+        path = os.path.join(basePath, "protected", dir, series)
         app.config[series + "_" + dir] = path
         if not os.path.exists(path):
             os.mkdir(path)
@@ -270,15 +179,6 @@ def index():
     user = session["user"]
     return render_template("PIRADS_webAI.html", username=user)
 
-
-# @app.route('/uploads/<filename>')
-# def uploaded_file(filename):
-#     '''When the webpage needs '''
-#     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-# @app.route('/Viewer')
-# def Viewer ():
-#     return render_template('PIRADS_webAI.html')
 @app.route("/login", methods = ["POST", "GET"])
 def login():
     if request.method == "POST":
@@ -346,28 +246,6 @@ def protected(filename):
         return send_from_directory(os.path.join(app.instance_path,''), filename)
     except Exception as e:
         return redirect(url_for("index"))
-# @app.route('/api/imagelist')
-# def api_get_imagelist():
-#     if all(key in session for key in ('loggedIn', 'user')):
-#         if session["loggedIn"] == True:
-#             adc = cleanup(gather_files(app.config["adc_uploads"], ".dcm", False),"", True)
-#             highb = cleanup(gather_files(app.config["highb_uploads"], ".dcm", False),"", True)
-#             t2 = cleanup(gather_files(app.config["t2_uploads"], ".dcm", False),"", True)
-#             return jsonify(adc = adc, highb = highb, t2 = t2)
-#    return redirect(url_for("login"))
-
-# @app.route('/api/pixels')
-# def api_get_pixels():
-#     adc = []
-#     highb = []
-#     t2 = []
-#     for file in natsort.natsorted(cleanup(gather_files(app.config["adc_uploads"], ".dcm", False))[0]):
-#         adc.append(dicom.dcmread(file))
-#     for file in natsort.natsorted(cleanup(gather_files(app.config["highb_uploads"], ".dcm", False))[0]):
-#         highb.append(dicom.dcmread(file))
-#     for file in natsort.natsorted(cleanup(gather_files(app.config["t2_uploads"], ".dcm", False))[0]):
-#         t2.append(dicom.dcmread(file))
-#     return jsonify(adc = get_pixels(adc).tolist(), highb = get_pixels(highb).tolist(), t2 = get_pixels(t2).tolist())
 
 
 if __name__ == "__main__":
