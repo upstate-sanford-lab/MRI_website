@@ -132,4 +132,4 @@ class Align:
 
 if __name__== '__main__':
     c=Align()
-    c.align()
+    c.align() 
