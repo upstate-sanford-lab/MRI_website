@@ -9,7 +9,7 @@ if len(sys.argv)!=2:
 class Anonymize:
 
     def __init__(self):
-        self.basePATH='for development only'
+        self.basePATH= os.getcwd()
 
     def process_dir(self,dir=''):
         '''anonymize all files in directory'''
@@ -74,4 +74,3 @@ class Anonymize:
 if __name__=='__main__':
     c=Anonymize()
     c.process_dir()
-
