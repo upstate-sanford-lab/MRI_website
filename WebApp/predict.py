@@ -26,7 +26,7 @@ class Predict:
     random.seed(0)
 
     def __init__(self):
-        self.path= r'C:\Users\MSStore\WebApp'
+        self.path= os.getcwd()
         self.dict=None
 
     def calculate_PIRADS(self,idict=None):
@@ -37,14 +37,14 @@ class Predict:
     def apply_model(self):
 
         # import model
-        model_path = os.path.join(self.path,'static', 'model')
+        model_path = os.path.join(self.path,'protected', 'model')
         learn = load_learner(model_path)
 
         #iterate over tumors and calculate
         sum_pred = 0
         img_num = 0
-        for image in sorted(os.listdir(os.path.join(os.path.join(self.path, 'static','jpg_tumor'), 'tumor'))):
-            img = open_image(os.path.join(os.path.join(self.path,'static' ,'jpg_tumor'), 'tumor', image))
+        for image in sorted(os.listdir(os.path.join(os.path.join(self.path, 'protected','jpg_tumor'), 'tumor'))):
+            img = open_image(os.path.join(os.path.join(self.path,'protected' ,'jpg_tumor'), 'tumor', image))
             pred_class, pred_idx, outputs = learn.predict(img)
             sum_pred += int(str(pred_class).split('_')[1])
             img_num += 1
@@ -63,7 +63,7 @@ class Predict:
         :return:
         '''
 
-        p_t_i=os.path.join(self.path,'static','JPG_converts')
+        p_t_i=os.path.join(self.path,'protected','JPG_converts')
         s_dict=self.make_seg_dict(idict) #need
 
         index=0
