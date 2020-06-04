@@ -27,12 +27,12 @@ class Predict:
 
     def __init__(self):
         self.path= os.getcwd()
-        self.dict=None
+        self.dict = None
 
     def calculate_PIRADS(self,idict=None):
 
         self.segment_slices(idict=self.dict)
-        #self.apply_model()
+        self.apply_model()
 
     def apply_model(self):
 
@@ -53,6 +53,7 @@ class Predict:
         # metrics
         average = sum_pred / img_num
         print("Overall PIRADS Score is {}ish".format(average))
+        return (average)
 
 
     def segment_slices(self,idict=None):
@@ -102,7 +103,7 @@ class Predict:
             index+=1
 
 
-    def make_seg_dict(self,s_dicts=None,id='None'):
+    def make_seg_dict(self, s_dicts=None, id='None'):
         '''
         makes a dictionary with format {'slice#':['name','xmin','xmax','ymin','ymax']}
         :param s_dicts: the dictionary of values from program.
@@ -110,7 +111,6 @@ class Predict:
         :param id: nothing for now, may add in the future
         :return:
         '''
-        s_dicts={'9': {'x': [154, 154, 168, 169, 180, 173, 163],'y': [191, 206, 204, 202, 183, 178, 183]},'10': {'x': [156, 158, 169, 170, 181, 174, 162], 'y': [190, 207, 203, 201, 182, 177, 189]}}
         o_d={}
         for slice in s_dicts.keys():
             l=s_dicts[slice]
