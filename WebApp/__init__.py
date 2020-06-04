@@ -3,11 +3,12 @@ from werkzeug.utils import secure_filename
 import pydicom as dicom
 import numpy as np
 import os
-from PIL import Image
+import PIL.Image
 from functools import wraps
 import natsort
 import subprocess
 from predict import Predict
+from fastai.vision import *
 
 def gather_files(path, type, wholeDIR):
     '''Return a list of directories containing files of a
@@ -42,7 +43,7 @@ def makeJPGs(DCM_location, JPG_location, series):
                 #     else:
                 #         pixels = (np.maximum(ps, 0) / ps.max()) * 255.0
                 pixels = np.uint8(pixels)
-                im = Image.fromarray(pixels)
+                im = PIL.Image.fromarray(pixels)
                 im = im.convert("L")
 
                 s = s.replace('.dcm', '.jpg')
@@ -179,8 +180,8 @@ def index():
         if uploaded > 0:
             imagelist = [];
             for series in ["adc", "highb", "t2"]:
-                subprocess.call(["Python", "anonymize.py", app.config[series + "_uploads"]])
-            subprocess.call(["Python", "Alignment.py", app.config["t2_uploads"], app.config["adc_uploads"],
+                subprocess.call(["python", "anonymize.py", app.config[series + "_uploads"]])
+            subprocess.call(["python", "Alignment.py", app.config["t2_uploads"], app.config["adc_uploads"],
                              app.config["highb_uploads"], app.config["Aligned_DICOM"]])
             for series in ["adc", "highb", "t2"]:
                 imagelist.append(
@@ -250,7 +251,9 @@ def api_receiveMarkup():
             i = i + 1
         print(markup)
         c = Predict()
+        c.path = basePath
         c.dict = markup
+        c.learn = load_learner(os.path.join(basePath, 'static', 'model'))
         score = c.calculate_PIRADS()
         return str("Overall PIRADS Score is {}ish".format(score))
     else:
@@ -268,4 +271,3 @@ def protected(filename):
 
 if __name__ == "__main__":
     app.run(debug=True)
-
