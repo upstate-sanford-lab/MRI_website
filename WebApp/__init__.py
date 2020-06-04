@@ -255,7 +255,7 @@ def api_receiveMarkup():
         c.dict = markup
         c.learn = load_learner(os.path.join(basePath, 'static', 'model'))
         score = c.calculate_PIRADS()
-        return str("Overall PIRADS Score is {}ish".format(score))
+        return ("Overall PIRADS Score is {}ish".format(score))
     else:
         return "Error: submitted GET request. POST request required"
 
