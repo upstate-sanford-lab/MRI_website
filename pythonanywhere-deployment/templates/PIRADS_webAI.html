@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> ARAP </title>
+    <link rel = "stylesheet" href = "static/stylesheets/style.css">
+    <script src = "static/javascripts/jquery.js"></script>
+    <script src = "static/javascripts/viewer.js"></script>
+</head>
+<body>
+    <div class = "Myheading">
+        <div class = "Mytitle_container">
+            <h1 class = "Mytitle"> Automated Risk Assessment of Prostate Lesions(Prototype)</h1>
+        </div>
+    </div>
+
+    <div class = "uploading">
+        <form action="/Homepage" method="POST" enctype="multipart/form-data">
+            <div class ="Myform">
+                Choose Dicom files for Upload. Then select:
+                <button id = "uploadBtn" type="submit" name="submit" > UPLOAD</button>
+                <br/><br/>
+                adc formatted images:
+                <input id = "adc" type="file"  name="adc" multiple = "" webkitdirectory="" directory=""/>
+                <br/><br/>
+
+                HighB formatted images:
+                <input id = "HighB" type="file"  name="highb" multiple = "" webkitdirectory="" directory=""/>
+                <br/><br/>
+
+                T2 formatted images:
+                <input id = "T2" type="file" name="t2" multiple = "" webkitdirectory="" directory=""/>
+            </div>
+        </form>
+        <button id = "deleteFiles" onclick = "window.location.href='http://AndrewGoldmann.pythonanywhere.com/deleteFiles'"> Delete Files </button>
+        <div class = "userInfo_container">
+            <ul class = "userInfo">
+                <li id = "username"> {{username}}: </li>
+                <li> <a href="http://AndrewGoldmann.pythonanywhere.com/logout" style = "color: black"> Logout </a> </li>
+                <li> <a href="http://AndrewGoldmann.pythonanywhere.com/deleteAccount" style = "color: red"> Delete Account </a></li>
+            </ul>
+            <div id="flashBox">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="{{ category }}">{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    <div class = "viewPort">
+        <div class = "gridBox">
+            <div class = "box">
+                <div class = "window" id = div1>
+                    <canvas class = "canvas" id="canvas1" ></canvas>
+                </div>
+            </div>
+            <div class = "box">
+                <div class = "window" id = div2>
+                    <canvas class = "canvas" id="canvas2" ></canvas>
+                </div>
+            </div>
+            <div class = "box">
+                <div class = "window" id = div3>
+                    <canvas class = "canvas" id="canvas3" ></canvas>
+                </div>
+            </div>
+            <div class = "imageOutof">
+                    <p class = "label" id = "label1">This is where image information is appended</p>
+            </div>
+            <div class = "imageOutof">
+                    <p class = "label" id = "label2">This is where image information is appended</p>
+            </div>
+            <div class = "imageOutof">
+                    <p class = "label" id = "label3">This is where image information is appended</p>
+            </div>
+            <div class = "toolbar">
+                <button class = "switch" id = "previous">&laquo Previous</button>
+                <button class = "editor" id = "clearMU" > redo markup </button>
+                <button class = "editor" id = "submitMU" > submit markup </button>
+                <button class = "switch" id = "next">Next &raquo</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
