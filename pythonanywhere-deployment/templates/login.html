@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel = "stylesheet" href = "static/stylesheets/formStyle.css">
+    <title> login page </title>
+</head>
+<body>
+        <h2> Login Form </h2>
+        <div class = "container">
+            <form method="POST">
+                <label for="username"><b>Username</b></label>
+                <input type = "text"  placeholder="Enter Username" name = "username" required>
+                <label for="password"><b>Password</b></label>
+                <input type = "password"  placeholder="Enter Password" name = "password" required>
+                <input type = "submit" value = "submit">
+            </form>
+            <br/><br/>
+            <span>
+                <div id="flashBox">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <p class="{{ category }}">{{ message }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+             Don't have an account? <a href="http://AndrewGoldmann.pythonanywhere.com/register"> Click here to register! </a>
+            </span>
+        </div>
+</body>
+</html>
