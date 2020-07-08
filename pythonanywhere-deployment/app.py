@@ -8,10 +8,12 @@ from functools import wraps
 import natsort
 import subprocess
 from predict import Predict
+import torch
 from fastai.vision import *
 from flask_sqlalchemy import SQLAlchemy
 from datetime import timedelta
-
+import logging
+import json
 
 def gather_files(path, type, wholeDIR):
     '''Return a list of directories containing files of a
@@ -66,7 +68,8 @@ def allowed_file(filename):
     '''This function isolates the file extension and checks to see if it is an Allowed extension.
     This helps prevent users from uploading malicious files to the server'''
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.',1)[1].lower() in ALLOWED_EXTENSIONS and \
+           len(filename.split(".")) == 2
 
 
 def SaveSeries(file, filename, series):
@@ -124,6 +127,10 @@ def configureUserFiles():
             if not os.path.exists(seriesPath):
                 os.mkdir(seriesPath)
                 print("made directory: " + seriesPath)
+    dirPath = os.path.join(userPath,"jpg_tumor")
+    session["fileConfig"]["jpg_tumor"] = dirPath
+    if not os.path.exists(dirPath):
+        os.mkdir(dirPath)
 
 
 basePath = os.path.dirname(os.path.abspath(__file__))
@@ -150,7 +157,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'dcm'}
+ALLOWED_EXTENSIONS = {'dcm'}
 
 class users(db.Model):
     id = db.Column("id", db.Integer, primary_key=True)
@@ -203,17 +210,24 @@ def index():
         for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
             clearFiles(session["fileConfig"][folder])
         for filetype in ["adc", "highb", "t2"]:
+            NoFilePart = False
+            NotAllowedType = False
             for file in request.files.getlist(filetype):
-                successfulSave = False
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
-                    successfulSave = SaveSeries(file, filename, filetype)
+                    successful = SaveSeries(file, filename, filetype)
+                    if successful:
+                        uploaded = uploaded + 1
                 elif not allowed_file(file.filename):
-                    flash("Not allowed file type", "error")
+                    print("not Allowed  " + file.filename)
+                    NotAllowedType == True
                 else:
-                    flash("No file part", "error")
-                if successfulSave == True:
-                    uploaded = uploaded + 1
+                    NoFilePart == True
+            if NoFilePart == True:
+                flash("There was no file in the {series} series".format(series=filetype), "error")
+            if NotAllowedType == True:
+                flash("A file in {series} was not a dicom".format(series=filetype), "error")
+
         if uploaded > 0:
             imagelist = [];
             for series in ["adc", "highb", "t2"]:
@@ -252,11 +266,12 @@ def login():
                 session.permanent = True
                 flash("Successfully logged in", 'info')
                 configureUserFiles()
+                return redirect(url_for("index"))
             else:
                 flash("Password incorrect", 'error')
         else:
             flash("Username incorrect", 'error')
-    if all(key in session for key in ('loggedIn', 'user')):
+    elif all(key in session for key in ('loggedIn', 'user')):
         if session["loggedIn"] == True:
             flash("Already logged in", "info")
             return redirect(url_for("index"))
@@ -308,30 +323,38 @@ def api_get_images():
 @login_required
 def api_receiveMarkup():
     flash("Segmentation received", "info")
+    clearFiles(session["fileConfig"]["jpg_tumor"])
     if request.method == 'POST':
-        data = request.form.to_dict(flat=True)
-        markup = {}
-        # markup = {'primarySlice': int(data['primarySlice'])}
-        if 'slices' in data:
-            i = 0
-            for slice in data['slices'].split(", "):
-                if slice in markup.keys():
-                    markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                    markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-                else:
-                    markup[slice] = {'x': [], 'y': []}
-                    markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                    markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-                i = i + 1
-            print(markup)
-            c = Predict()
-            c.path = basePath
-            c.dict = markup
-            #defaults.device = torch.device('cpu')
-            c.learn = load_learner(os.path.join(basePath, 'static', 'model',))
-            score = c.calculate_PIRADS()
-            return ("This version is unable to report a PIRADS score at this point of development")
-        else:
+        try:
+            data = request.form.to_dict(flat=True)
+            markup = {}
+            # markup = {'primarySlice': int(data['primarySlice'])}
+            if 'slices' in data:
+                i = 0
+                for slice in data['slices'].split(", "):
+                    if slice in markup.keys():
+                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+                    else:
+                        markup[slice] = {'x': [], 'y': []}
+                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+                    i = i + 1
+                print(markup)
+                # try:
+                markup_as_string = json.dumps(markup)
+                capture = subprocess.run([venvPath, os.path.join(basePath,'test.py'), basePath, markup_as_string, session["user"]], capture_output = True, text=True)
+                print("capture is: ")
+                print(capture.stdout)
+                print(type(capture.stdout))
+                if capture.returncode !=0:
+                    print(capture.stderr)
+                    return ("You caused a bug! This will be worked on at our end, please try again with slighly diferent segmentation")
+                score = capture.stdout
+                return (score)
+            #     except:
+            #         return ("This version of the website is unable to report a PIRADS score")
+        except:
             return ("please segment the region of the prostate that requires analysis")
     else:
         return "Error: submitted GET request. POST request required"
@@ -361,12 +384,23 @@ def deleteAccount():
 @app.route("/deleteFiles")
 @login_required
 def deleteFiles():
-    count=0
+    count = []
     for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
-        count = count + clearFiles(session["fileConfig"][folder])
-    flash(str(count)+" files deleted", "info")
+        count.append(clearFiles(session["fileConfig"][folder]))
+    flash(str(count[0])+" dicom files deleted", "info")
+    total = 0
+    for num in count:
+        total = total+num
+    flash(str(total) + " total files deleted including accessory files", "info")
     return redirect(url_for("index"))
 
+@app.errorhandler(500)
+def server_error(e):
+    logging.exception('An error occurred during a request.')
+    return """
+    An internal error occurred: <pre>{}</pre>
+    See logs for full stacktrace.
+    """.format(e), 500
 
 @app.route("/view")
 @admin_required
