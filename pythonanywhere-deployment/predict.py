@@ -23,14 +23,13 @@ from fastai.vision import *
 #from fastai.basic_train import *
 
 class Predict:
-
-    print("predict has been called!")
     random.seed(0)
 
     def __init__(self):
         self.path = None
         self.dict = None
         self.learn = None
+        self.user = None
 
     def calculate_PIRADS(self,idict=None):
 
@@ -45,12 +44,12 @@ class Predict:
         #iterate over tumors and calculate
         sum_pred = 0
         img_num = 0
-        for image in sorted(os.listdir(os.path.join(os.path.join(self.path, 'protected','jpg_tumor'), 'tumor'))):
-            img = open_image(os.path.join(os.path.join(self.path,'protected' ,'jpg_tumor'), 'tumor', image))
+        for image in sorted(os.listdir(os.path.join(os.path.join(self.path, 'protected',self.user,'jpg_tumor'), 'tumor'))):
+            img = open_image(os.path.join(os.path.join(self.path,'protected', self.user,'jpg_tumor'), 'tumor', image))
             pred_class, pred_idx, outputs = learn.predict(img)
             sum_pred += int(str(pred_class).split('_')[1])
             img_num += 1
-            print("for image {} the predicted class is {}".format(image.split('.')[0],pred_class))
+            print("for image {} the predicted class is {}".format(str(int(image.split('.')[0])+1),pred_class))
 
         # metrics
         average = sum_pred / img_num
@@ -66,7 +65,7 @@ class Predict:
         :return:
         '''
 
-        p_t_i=os.path.join(self.path,'protected','JPG_converts')
+        p_t_i=os.path.join(self.path,'protected',self.user,'JPG_converts')
         s_dict=self.make_seg_dict(idict) #need
 
         index=0
