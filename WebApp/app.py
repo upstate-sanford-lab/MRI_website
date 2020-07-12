@@ -125,6 +125,39 @@ def configureUserFiles():
                 os.mkdir(seriesPath)
                 print("made directory: " + seriesPath)
 
+                
+def get_all_file_paths(directory):
+    # initializing empty file paths list
+    file_paths = []
+
+    # crawling through directory and subdirectories
+    for dirName, subdirList, files in os.walk(directory):
+        for filename in files:
+            # join the two strings in order to form the full filepath.
+            filepath = os.path.join(dirName, filename)
+            file_paths.append(filepath)
+
+    # returning all file paths
+    return file_paths
+
+def create_zip():
+    directory = os.path.join(basePath, "protected", session["user"], "Aligned_DICOM")
+    file_paths = get_all_file_paths(directory)
+    print(file_paths)
+    zip_path = os.path.join(basePath, "protected", session["user"],'files.zip')
+
+    if os.path.exists(zip_path):
+        os.remove(zip_path)
+
+    with ZipFile(zip_path,'w') as zip:
+        # writing each file one by one
+        for file in file_paths:
+            normPath = os.path.normpath(file)
+            print(normPath)
+            split_file = normPath.split(os.sep)
+            print(split_file)
+            arcFile = os.path.join(split_file[len(split_file)-3],split_file[len(split_file)-2],split_file[len(split_file)-1])
+            zip.write(file, arcFile)
 
 basePath = os.path.dirname(os.path.abspath(__file__))
 venvPath = "/home/AndrewGoldmann/.virtualenvs/flaskk/bin/python"
@@ -226,6 +259,7 @@ def index():
             print("the following images have been anonymized, aligned, and saved as JPGs")
             print(imagelist)
             flash(str(uploaded) + " files successfully uploaded, anonymized and aligned", 'info')
+            create_zip()
         else:
             flash("No files were uploaded", "error")
     user = session["user"]
@@ -377,6 +411,17 @@ def view():
         values == "database empty"
     return render_template("view.html", values=values)
 
+@app.route("/downloadFiles")
+@login_required
+def complete_download():
+    zip_path = os.path.join(basePath, "protected", session["user"])
+    filename = 'files.zip'
+    if os.path.exists(os.path.join(zip_path, filename)):
+        flash("Files sent to browser", "info")
+        return send_from_directory(zip_path, filename, mimetype='application/zip', as_attachment=True, attachment_filename= filename)
+    else:
+        flash("Files not ready", 'error')
+        return redirect(url_for("index"))
 
 if __name__ == "__main__":
     db.create_all()
