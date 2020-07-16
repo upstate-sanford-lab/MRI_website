@@ -16,16 +16,33 @@ $(document).ready(function(){
     const prev = document.getElementById("previous");
     const clr = document.getElementById("clearMU");
     const nxt = document.getElementById("next");
-    const smt = document.getElementById("submitMU")
+    const smt = document.getElementById("submitMU");
     const deleteButton = document.getElementById("deleteFiles");
+    const infoButton = document.getElementById("openInfo");
+    const uploadButton = document.getElementById("openUpload");
+    const sortDicomButton = document.getElementById("sortDicoms");
+    const viewPort = document.getElementById("viewPort");
+
+
+    document.getElementById("InformationTab").style.display = 'none';
+    document.getElementById("uploadForm").style.display = 'none';
+    document.getElementById("sortDicomsTab").style.display = 'none';
+
+    var dimensions = (viewPort.getBoundingClientRect().width/3) -10;
 
     prev.addEventListener("click", previousImage);
     nxt.addEventListener("click", nextImage);
-    clr.addEventListener("click", clearMarkup)
-    smt.addEventListener("click", submitMarkup)
-    deleteButton.addEventListener("click", getImages)
+    clr.addEventListener("click", clearMarkup);
+    smt.addEventListener("click", submitMarkup);
+    deleteButton.addEventListener("click", getImages);
 
-    //window.addEventListener("resize", RespondResize)
+    infoButton.addEventListener("click", function(){toggle_visibility("InformationTab")});
+    uploadButton.addEventListener("click", function(){toggle_visibility("uploadForm")});
+    sortDicomButton.addEventListener("click", function(){toggle_visibility("sortDicomsTab")});
+
+    window.addEventListener("resize", updateDimensions);
+
+    //window.addEventListener("resize", RespondResize);
 
     const c1 = document.getElementById("canvas1");
     const c2 = document.getElementById("canvas2");
@@ -46,6 +63,14 @@ $(document).ready(function(){
       this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
       e.preventDefault();
     });
+
+    function toggle_visibility(id) {
+        var e = document.getElementById(id);
+        if(e.style.display == 'block')
+            e.style.display = 'none';
+        else
+            e.style.display = 'block';
+    }
 
     function getImages(){
         $.ajax({type: 'GET', url: '/api/images',
@@ -87,14 +112,17 @@ $(document).ready(function(){
                         adc[i].src = 'static/placeholder.png';
                 }
 
-                init(c1,ctx1);
-                init(c2,ctx2);
-                init(c3,ctx3);
+                ctx2.lineWidth = 2;
+                ctx2.strokeStyle = 'blue';
+
+                init(c1);
+                init(c2);
+                init(c3);
 
                 c2.addEventListener("click", RespondClick);
-                ctx2.lineWidth = 3;
-                ctx2.strokeStyle = 'blue';
-                updateImages();
+                adc[0].onload = updateImages;
+                highb[0].onload = updateImages;
+                t2[0].onload = updateImages;
 
             }, error: function(){
                 alert("error receiving image data");
@@ -102,10 +130,13 @@ $(document).ready(function(){
         });
     }
 
-    function init(c,ctx){
+    function init(c){
         c.addEventListener("wheel", Respondscroll);
-        c.width = 384;
-        c.height = 384;
+        setDimensions(c)
+    }
+    function setDimensions(c){
+        c.width = dimensions;
+        c.height = dimensions;
     }
 
     function Respondscroll(event){
@@ -176,14 +207,14 @@ $(document).ready(function(){
         for(i=0;i< len-1; i++)
         {
             slices = slices + coordinates[i].slice + ", ";
-            xcor = xcor + Math.round(coordinates[i].x).toString() + ", ";
-            ycor = ycor + Math.round(coordinates[i].y).toString() + ", ";
+            xcor = xcor + Math.round(coordinates[i].x *(384/100)).toString() + ", ";
+            ycor = ycor + Math.round(coordinates[i].y *(384/100)).toString() + ", ";
         }
         if(len>0)
         {
             slices = slices + coordinates[len-1].slice ;
-            xcor = xcor + Math.round(coordinates[len-1].x).toString();
-            ycor = ycor + Math.round(coordinates[len-1].y).toString();
+            xcor = xcor + Math.round(coordinates[len-1].x*(384/100)).toString();
+            ycor = ycor + Math.round(coordinates[len-1].y*(384/100)).toString();
         }
 
         console.log(xcor);
@@ -204,10 +235,13 @@ $(document).ready(function(){
     function updateImages(){
         var first = true;
         console.log(num + "  :  " + imnum);
-        ctx1.drawImage(adc[imnum], 0, 0);
-        ctx2.drawImage(t2[imnum], 0, 0);
-        ctx3.drawImage(highb[imnum], 0, 0);
-
+        setDimensions(c1);
+        setDimensions(c2);
+        setDimensions(c3);
+        ctx1.drawImage(adc[imnum], 0, 0, dimensions, dimensions);
+        ctx2.drawImage(t2[imnum], 0, 0, dimensions, dimensions);
+        ctx3.drawImage(highb[imnum], 0, 0,dimensions, dimensions);
+        ctx2.strokeStyle = 'blue';
         if (longest > 0){
             l1.innerHTML = "    adc:          " + (imnum+1) + "/" + adc.length;
             l2.innerHTML =  "    T-2:          " + (imnum+1) + "/" + highb.length;
@@ -218,6 +252,7 @@ $(document).ready(function(){
             l2.innerHTML = "no images uploaded";
             l3.innerHTML = "no images uploaded";
         }
+
         ctx2.beginPath();
         for (i = 0; i<coordinates.length; i++){
             if (coordinates[i].slice == imnum)
@@ -225,14 +260,17 @@ $(document).ready(function(){
                 if (first == true)
                 {
                     first = false;
-                    ctx2.moveTo(coordinates[i].x, coordinates[i].y);
+                    ctx2.moveTo(coordinates[i].x * (dimensions/100), coordinates[i].y * (dimensions/100));
                 }
                 else
                 {
-                    ctx2.lineTo(coordinates[i].x, coordinates[i].y);
+                    ctx2.lineTo(coordinates[i].x * (dimensions/100), coordinates[i].y * (dimensions/100));
                 }
-                ctx2.arc(coordinates[i].x, coordinates[i].y, 3, 0, 2 * Math.PI, false);
-                //console.log("slice " + coordinates[i].slice + ", x: " + coordinates[i].x + " | y: " +  coordinates[i].y;
+                ctx2.arc(coordinates[i].x * (dimensions/100), coordinates[i].y * (dimensions/100), 3, 0, 2 * Math.PI, false);
+                // console.log("dimensions " + dimensions)
+                // console.log("slice " + coordinates[i].slice + ", x: " + Math.round(coordinates[i].x) + " | y: " +  Math.round(coordinates[i].y));
+                // console.log("slice " + coordinates[i].slice + ", x * D: " + Math.round(coordinates[i].x* (dimensions/100)) + " | y * D: " +  Math.round(coordinates[i].y * (dimensions/100)));
+
             }
         }
         ctx2.closePath();
@@ -241,8 +279,16 @@ $(document).ready(function(){
         ctx3.stroke();
     }
 
+    function updateDimensions(event){
+        console.log(viewPort.getBoundingClientRect().width);
+        dimensions = (viewPort.getBoundingClientRect().width / 3)-10;
+        updateImages()
+    }
+
     function RespondClick(event){
-        coordinates.push({slice: imnum, x: event.pageX - getOffset(c2).left, y: event.pageY-getOffset(c2).top})
+        x = (event.pageX - getOffset(c2).left)*(100/dimensions);
+        y = (event.pageY - getOffset(c2).top)*(100/dimensions);
+        coordinates.push({slice: imnum, x: x, y: y})
         //console.log("slice " + event.pageX + ", x: " + event.pageY + " | y: " +  coordinates[0].y);
         updateImages();
     }
