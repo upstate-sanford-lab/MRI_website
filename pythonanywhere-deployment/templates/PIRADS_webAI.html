@@ -13,7 +13,64 @@
         </div>
     </div>
 
-    <div class = "uploading">
+    <div class = "tools">
+        <button id = "openInfo">Instructions</button>
+        <button id = "openUpload">Upload DICOMS</button>
+        <button id = "sortDicoms"> Sort Dicoms </button>
+        <button id = "downloadFiles" onclick = "window.location.href='/downloadFiles'">Download Aligned DICOMS</button>
+        <button id = "deleteFiles" onclick = "window.location.href='/deleteFiles'"> Delete Uploaded Files </button>
+        <div class = "userInfo_container">
+            <ul class = "userInfo">
+                <li id = "username"> {{username}}: </li>
+                <li> <a href="/logout" style = "color: black"> Logout </a> </li>
+                <li> <a href="/deleteAccount" style = "color: red"> Delete Account </a></li>
+            </ul>
+            <div id="flashBox">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="{{ category }}">{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+        <div id="InformationTab">
+        <h3>
+            Uploading your files
+        </h3>
+
+        <p>
+            For each MRI series (adc, hihgb, and t2) click on 'choose files'.
+            Navigate to the folder containing the respective MRI series and open it.
+            Once you are finished selecting the appropriate folders for each MRI series, click on 'upload'.
+            Note: the upload button will delete any image files you have previously uploaded to make room for the new files.
+            Once your files are uploaded, they will be anonymized, aligned, and presented back on the web browser for you to scroll through.
+        </p>
+
+        <h3>
+            Creating your markup
+        </h3>
+
+        <p>
+            On the center display which contains the t2 series, use your curser to click around the perimeter of a possible lesions.
+            If you make a mistake, click on the 'redo markup' button to reset the markup on the current slice level.
+            Continue this process on all slices that contain evidence of a possible lesion.
+            Once you have finished, click on the 'submit markup' button.
+            Our machine learning model will use your markup to generate an estimated PIRADs score for the MRI series.
+        </p>
+
+        <h3>
+            Deleting personal information
+        </h3>
+
+        <p>
+            All images are anonymized automatically on upload. To delete all image files from your account click on the 'delete files' button.
+            To delete your account enirely click on the 'Delete account' tag on the top right of your screen.
+        </p>
+    </div>
+    <div id = "uploadForm">
         <form action="/Homepage" method="POST" enctype="multipart/form-data">
             <div class ="Myform">
                 Choose Dicom files for Upload. Then select:
@@ -31,25 +88,19 @@
                 <input id = "T2" type="file" name="t2" multiple = "" webkitdirectory="" directory=""/>
             </div>
         </form>
-        <button id = "deleteFiles" onclick = "window.location.href='http://AndrewGoldmann.pythonanywhere.com/deleteFiles'"> Delete Files </button>
-        <div class = "userInfo_container">
-            <ul class = "userInfo">
-                <li id = "username"> {{username}}: </li>
-                <li> <a href="http://AndrewGoldmann.pythonanywhere.com/logout" style = "color: black"> Logout </a> </li>
-                <li> <a href="http://AndrewGoldmann.pythonanywhere.com/deleteAccount" style = "color: red"> Delete Account </a></li>
-            </ul>
-            <div id="flashBox">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <p class="{{ category }}">{{ message }}</p>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-            </div>
-        </div>
     </div>
-    <div class = "viewPort">
+    <div id = "sortDicomsTab">
+        <form action="/sortDicoms" method="POST" enctype="multipart/form-data">
+            <div class ="Myform">
+                Choose the files you want sorted, then click 'upload':
+                <button id = "uploadFiles" type="submit" name="submit" > UPLOAD</button>
+                <br/><br/>
+                Files to be sorted:
+                <input id = "filesToSort" type="file"  name="filesToSort" multiple = "" webkitdirectory="" directory=""/>
+            </div>
+        </form>
+    </div>
+    <div id = "viewPort">
         <div class = "gridBox">
             <div class = "box">
                 <div class = "window" id = div1>
