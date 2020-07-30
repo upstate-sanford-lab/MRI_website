@@ -5,38 +5,55 @@
     <link rel = "stylesheet" href = "static/stylesheets/style.css">
     <script src = "static/javascripts/jquery.js"></script>
     <script src = "static/javascripts/viewer.js"></script>
+    <script src = "static/javascripts/dicomParser.js"></script>
+    <script src = "static/javascripts/dataDictionary.js"></script>
 </head>
 <body>
-    <div class = "Myheading">
-        <div class = "Mytitle_container">
+    <div class = "container" id = "titleContainer">
+        <div>
             <h1 class = "Mytitle"> Automated Risk Assessment of Prostate Lesions(Prototype)</h1>
         </div>
     </div>
 
-    <div class = "tools">
-        <button id = "openInfo">Instructions</button>
-        <button id = "openUpload">Upload DICOMS</button>
-        <button id = "sortDicoms"> Sort Dicoms </button>
-        <button id = "downloadFiles" onclick = "window.location.href='/downloadFiles'">Download Aligned DICOMS</button>
-        <button id = "deleteFiles" onclick = "window.location.href='/deleteFiles'"> Delete Uploaded Files </button>
+    <div class = "container" id="ToolsAndActions">
+        <div class = "sub" id = "actionDiv">
+            <button class="tools" id = "openInfo">Instructions</button>
+            <button class="tools" id = "openUpload">Align, View, Segment Dicoms</button>
+            <button class="tools" id = "sortDicoms">Sort Dicoms</button>
+            <button class="actions" id = "downloadFiles" onclick = "window.location.href='/downloadFiles'">Download Aligned DICOMS</button>
+            <button class="actions" id = "deleteFiles" onclick = "window.location.href='/deleteFiles'"> Delete Uploaded Files </button>
+        </div>
+
         <div class = "userInfo_container">
             <ul class = "userInfo">
                 <li id = "username"> {{username}}: </li>
                 <li> <a href="/logout" style = "color: black"> Logout </a> </li>
                 <li> <a href="/deleteAccount" style = "color: red"> Delete Account </a></li>
             </ul>
-            <div id="flashBox">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <p class="{{ category }}">{{ message }}</p>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-            </div>
         </div>
     </div>
-        <div id="InformationTab">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class = "container" id="flashBox">
+            {% with category,message = messages[0] %}
+                    <p class="{{ category }}">{{ message }}</p>
+            {% endwith %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class = "container" id="InformationTab">
+        <h3>
+            Organizing your files
+        </h3>
+
+        <p>
+            Under the "Sort Dicoms" tab, use the "choose files" button to mark the directory on your computer containing dicom files.
+            When ready, use the "upload" button to send them to our server.
+            Our sorting algorythm will sort the files into folders based on series type, and then return the sorted files to your browser in a zip folder.
+            All of these files are deleted from our server once this process is completed.
+
         <h3>
             Uploading your files
         </h3>
@@ -66,12 +83,14 @@
         </h3>
 
         <p>
-            All images are anonymized automatically on upload. To delete all image files from your account click on the 'delete files' button.
+            All images saved on the server are either anonymized automatically, or deleted soon after upload.
+            To delete all image files from your account click on the 'delete files' button.
             To delete your account enirely click on the 'Delete account' tag on the top right of your screen.
         </p>
     </div>
-    <div id = "uploadForm">
-        <form action="/Homepage" method="POST" enctype="multipart/form-data">
+
+    <div class = "container" id = "uploadForm">
+        <form id = "file-catcher" action="/Homepage" method="POST" enctype="multipart/form-data">
             <div class ="Myform">
                 Choose Dicom files for Upload. Then select:
                 <button id = "uploadBtn" type="submit" name="submit" > UPLOAD</button>
@@ -89,7 +108,8 @@
             </div>
         </form>
     </div>
-    <div id = "sortDicomsTab">
+
+    <div class = "container" id = "sortDicomsTab">
         <form action="/sortDicoms" method="POST" enctype="multipart/form-data">
             <div class ="Myform">
                 Choose the files you want sorted, then click 'upload':
@@ -100,19 +120,20 @@
             </div>
         </form>
     </div>
-    <div id = "viewPort">
+
+    <div class = "container" id = "viewPort">
         <div class = "gridBox">
-            <div class = "box">
+            <div class = "box" id = "adcbox">
                 <div class = "window" id = div1>
                     <canvas class = "canvas" id="canvas1" ></canvas>
                 </div>
             </div>
-            <div class = "box">
+            <div class = "box" id = "highbbox">
                 <div class = "window" id = div2>
                     <canvas class = "canvas" id="canvas2" ></canvas>
                 </div>
             </div>
-            <div class = "box">
+            <div class = "box" id = t2box>
                 <div class = "window" id = div3>
                     <canvas class = "canvas" id="canvas3" ></canvas>
                 </div>
@@ -122,6 +143,7 @@
             </div>
             <div class = "imageOutof">
                     <p class = "label" id = "label2">This is where image information is appended</p>
+                    <div class="loader" id = "loading" style = "display: none"></div>
             </div>
             <div class = "imageOutof">
                     <p class = "label" id = "label3">This is where image information is appended</p>
@@ -133,6 +155,7 @@
                 <button class = "switch" id = "next">Next &raquo</button>
             </div>
         </div>
+
     </div>
 </body>
 </html>
