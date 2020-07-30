@@ -22,13 +22,14 @@ $(document).ready(function(){
     const uploadButton = document.getElementById("openUpload");
     const sortDicomButton = document.getElementById("sortDicoms");
     const viewPort = document.getElementById("viewPort");
-
+    const loader = document.getElementById("loading")
 
     document.getElementById("InformationTab").style.display = 'none';
     document.getElementById("uploadForm").style.display = 'none';
     document.getElementById("sortDicomsTab").style.display = 'none';
+    loader.style.display = 'none';
 
-    var dimensions = (viewPort.getBoundingClientRect().width/3) -10;
+    var dimensions = (viewPort.getBoundingClientRect().width/3) -30;
 
     prev.addEventListener("click", previousImage);
     nxt.addEventListener("click", nextImage);
@@ -54,7 +55,7 @@ $(document).ready(function(){
 
     t2[0] = new Image();
     t2[0].src = 'static/placeholder.png';
-    getImages()
+    getImages();
 
     $(document.getElementsByClassName("window")).on( 'mousewheel DOMMouseScroll', function (e) {
       var e0 = e.originalEvent;
@@ -200,6 +201,7 @@ $(document).ready(function(){
     }
 
     function submitMarkup(){
+        loader.style.display = 'inline-block';
         var slices = "";
         var xcor = "";
         var ycor = "";
@@ -225,9 +227,10 @@ $(document).ready(function(){
           data: {primarySlice: imnum, slices: slices, x: xcor, y: ycor},
             success : function(server_message) {
                 alert(server_message);
-                console.log('success');
+                loading.style.display = 'none';
             }, error: function(){
                 alert("error with submission");
+                loader.style.display = 'none';
             }
         });
     }
@@ -279,9 +282,9 @@ $(document).ready(function(){
         ctx3.stroke();
     }
 
-    function updateDimensions(event){
+    function updateDimensions(){
         console.log(viewPort.getBoundingClientRect().width);
-        dimensions = (viewPort.getBoundingClientRect().width / 3)-10;
+        dimensions = (viewPort.getBoundingClientRect().width / 3)-30;
         updateImages()
     }
 
@@ -300,4 +303,159 @@ $(document).ready(function(){
             top: rect.top + window.scrollY
         };
     }
+
+
+
+
+// anonymizer scripts --------------------------------------------------------------------------------------------------------------------------------------
+
+    // var fileCatcher = document.getElementById('file-catcher');
+    // var fileInput = []
+    // // fileInput[0] = document.getElementById('adc');
+    // // fileInput[1] = document.getElementById('HighB');
+    // // fileInput[2] = document.getElementById('T2');
+
+    // fileInput[0] = document.getElementById('adcbox');
+    // fileInput[1] = document.getElementById('highbbox');
+    // fileInput[2] = document.getElementById('t2box');
+    // // var fileListDisplay = document.getElementById('file-list-display');
+
+    // for(h=0;h<3;h++)
+    // {
+    //     fileInput[h].addEventListener("dragenter", dragenter, false);
+    //     fileInput[h].addEventListener("dragover", dragover, false);
+    //     fileInput[h].addEventListener("drop", drop, false);
+    // }
+    // function dragenter(e) {
+    //   e.stopPropagation();
+    //   e.preventDefault();
+    // }
+    // function dragover(e) {
+    //   e.stopPropagation();
+    //   e.preventDefault();
+    // }
+    // function drop(e) {
+    //   e.stopPropagation();
+    //   e.preventDefault();
+
+    //   const dt = e.dataTransfer;
+    //   const files = dt.files;
+
+    //   handleFiles(files, e.currentTarget.id);
+    // }
+
+    // var files = [];
+    // var anonymizedFiles=[];
+    // var sendFile;
+
+    // function handleFiles(files,id){
+    //     console.log(files)
+    //     var isLast = false;
+    //     for(i=0; i<files.length;i++){
+    //         if(i==files.length-1){
+    //             isLast = true;
+    //         }
+    //         anonymizeFile(files[i],i,isLast,id);
+    //     }
+    // }
+
+    // function getTag(tag)
+    // {
+    //     var group = tag.substring(1,5);
+    //     var element = tag.substring(5,9);
+    //     var tagIndex = ("("+group+","+element+")").toUpperCase();
+    //     var attr = TAG_DICT[tagIndex];
+    //     return attr;
+    // }
+
+    // function anonymizeFile(file, num, isLast,id){
+    //     console.log("anonymizing");
+    //     var reader = new FileReader();
+    //     reader.onload = (function(file) {
+    //         var arrayBuffer = reader.result;
+    //         var byteArray = new Uint8Array(arrayBuffer);
+    //         var dataSet =  dicomParser.parseDicom(byteArray);
+
+    //         var keys = [];
+    //         for(var propertyName in dataSet.elements){
+    //             keys.push(propertyName);
+    //         };
+    //         keys.sort();
+
+    //         for(var k=0; k < keys.length; k++) {
+    //             var propertyName = keys[k];
+    //             var element = dataSet.elements[propertyName];
+
+    //             var tag = getTag(element.tag);
+    //             if(tag != undefined)
+    //             {
+    //                 //console.log("exists!")
+    //                 var vr = tag.vr
+    //                 if(dicomParser.isPrivateTag(element.tag))
+    //                 {
+    //                     console.log("private tag");
+    //                     var str = dataSet.string(propertyName);
+    //                     var deIdentifiedValue = makeDeIdentifiedValue(str.length, vr);
+    //                     var char = (deIdentifiedValue.length > i) ? deIdentifiedValue.charCodeAt(i) : 32;
+    //                     dataSet.byteArray[element.dataOffset + i] = char;
+    //                 };
+    //             }
+    //             else{
+    //                 //console.log("undefined value");
+    //             };
+    //         };
+    //         var blob = new Blob([dataSet.byteArray], {type: "application/dicom"})
+    //         anonymizedFiles[num] = blob;
+    //     });
+    //     reader.readAsArrayBuffer(file);
+    //     reader.onloadend = (function(){
+    //         if(isLast){
+    //             sendFiles(anonymizedFiles,id)
+    //         }
+    //     });
+    // }
+
+    // function makeDeIdentifiedValue(length, vr) {
+    //     if(vr === 'LO' || vr === "SH" || vr === "PN") {
+    //         return makeRandomString(length);
+    //     }
+    //     else if(vr === 'DA') {
+    //         var now = new Date();
+    //         return now.getYear() + 1900 + pad(now.getMonth() + 1, 2) + pad(now.getDate(), 2);
+    //     } else if(vr === 'TM') {
+    //         var now = new Date();
+    //         return pad(now.getHours(), 2) + pad(now.getMinutes(), 2) + pad(now.getSeconds(), 2);
+    //     }
+    //     console.log('unknown VR:' + vr);
+    // }
+
+    // // from http://stackoverflow.com/questions/1349404/generate-a-string-of-5-random-characters-in-javascript
+    // function makeRandomString(length)
+    // {
+    //     var text = "";
+    //     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    //     for( var i=0; i < length; i++ )
+    //         text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    //     return text;
+    // }
+    // function pad(num, size) {
+    //     var s = num+"";
+    //     while (s.length < size) s = "0" + s;
+    //     return s;
+    // }
+
+
+    // function sendFiles(files,id) {
+    //     console.log("sending data to /" + id)
+    //   	var formData = new FormData();
+    //     var request = new XMLHttpRequest();
+    //     formData.set('files', files);
+    //     request.open("POST", '/'+id);
+    //     request.send(formData);
+    //     getImages()
+    // };
+
+
 })
