@@ -7,15 +7,14 @@ import PIL.Image
 from functools import wraps
 import natsort
 import subprocess
-from predict import Predict
 from MRI_sorting import ParseMRI
-import torch
-from fastai.vision import *
 from flask_sqlalchemy import SQLAlchemy
 from datetime import timedelta
 import logging
 import json
 from zipfile import ZipFile
+import shutil
+from lesionID import lesionsID
 
 def gather_files(path, type, wholeDIR):
     '''Return a list of directories containing files of a
@@ -129,13 +128,26 @@ def configureUserFiles():
             if not os.path.exists(seriesPath):
                 os.mkdir(seriesPath)
                 print("made directory: " + seriesPath)
-    dirPath = os.path.join(userPath,"jpg_tumor")
-    session["fileConfig"]["jpg_tumor"] = dirPath
-    if not os.path.exists(dirPath):
-        os.mkdir(dirPath)
+
+    session["fileConfig"]["jpg_tumor"] = os.path.join(userPath,"jpg_tumor")
+    if not os.path.exists(session["fileConfig"]["jpg_tumor"]):
+        os.mkdir(session["fileConfig"]["jpg_tumor"])
+
     session["fileConfig"]["sortingDir"] = os.path.join(userPath,"sortingDir")
     if not os.path.exists(session["fileConfig"]["sortingDir"]):
         os.mkdir(session["fileConfig"]["sortingDir"])
+
+    session["fileConfig"]["lesionID"] = os.path.join(userPath,"lesionID")
+    if not os.path.exists(session["fileConfig"]["lesionID"]):
+        os.mkdir(session["fileConfig"]["lesionID"])
+
+    session["fileConfig"]["lesionID_save"] = os.path.join(userPath,"lesionID","save")
+    if not os.path.exists(session["fileConfig"]["lesionID_save"]):
+        os.mkdir(session["fileConfig"]["lesionID_save"])
+
+    session["fileConfig"]["lesionID_save_voi"] = os.path.join(userPath,"lesionID","save","voi")
+    if not os.path.exists(session["fileConfig"]["lesionID_save_voi"]):
+        os.mkdir(session["fileConfig"]["lesionID_save_voi"])
 
 def get_all_file_paths(directory):
     # initializing empty file paths list
@@ -171,12 +183,12 @@ def create_zip():
             zip.write(file, arcFile)
 
 basePath = os.path.dirname(os.path.abspath(__file__))
-venvPath = "/home/AndrewGoldmann/.virtualenvs/flaskk/bin/python"
+venvPath = "/home/sanfordlab/.virtualenvs/flaskk/bin/python"
 
 
 app = Flask(__name__, instance_path=os.path.join(basePath, 'protected'))
 app.config['SECRET_KEY'] = "supersecretkey34237439273874298"
-app.permanent_session_lifetime = timedelta(minutes = 5)
+app.permanent_session_lifetime = timedelta(minutes = 30)
 
 # SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 #     username="AndrewGoldmann",
@@ -363,36 +375,35 @@ def api_receiveMarkup():
     flash("Segmentation received", "info")
     clearFiles(session["fileConfig"]["jpg_tumor"])
     if request.method == 'POST':
-        try:
-            data = request.form.to_dict(flat=True)
-            markup = {}
-            # markup = {'primarySlice': int(data['primarySlice'])}
-            if 'slices' in data:
-                i = 0
-                for slice in data['slices'].split(", "):
-                    if slice in markup.keys():
-                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-                    else:
-                        markup[slice] = {'x': [], 'y': []}
-                        markup[slice]['x'].append(int(data['x'].split(", ")[i]))
-                        markup[slice]['y'].append(int(data['y'].split(", ")[i]))
-                    i = i + 1
-                print(markup)
-                # try:
-                markup_as_string = json.dumps(markup)
-                capture = subprocess.run([venvPath, os.path.join(basePath,'test.py'), basePath, markup_as_string, session["user"]], capture_output = True, text=True)
-                print("capture is: ")
-                print(capture.stdout)
-                print(type(capture.stdout))
-                if capture.returncode !=0:
-                    print(capture.stderr)
-                    return ("You caused a bug! This will be worked on at our end, please try again with slighly diferent segmentation")
-                score = capture.stdout
-                return (score)
-            #     except:
-            #         return ("This version of the website is unable to report a PIRADS score")
-        except:
+        data = request.form.to_dict(flat=True)
+        markup = {}
+        # markup = {'primarySlice': int(data['primarySlice'])}
+        if 'slices' in data:
+            i = 0
+            for slice in data['slices'].split(", "):
+                if slice in markup.keys():
+                    markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                    markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+                else:
+                    markup[slice] = {'x': [], 'y': []}
+                    markup[slice]['x'].append(int(data['x'].split(", ")[i]))
+                    markup[slice]['y'].append(int(data['y'].split(", ")[i]))
+                i = i + 1
+            print(markup)
+            # try:
+            markup_as_string = json.dumps(markup)
+            capture = subprocess.run([venvPath, os.path.join(basePath,'middle_man.py'), basePath, markup_as_string, session["user"]], capture_output = True, text=True)
+            print("capture is: ")
+            print(capture.stdout)
+            print(type(capture.stdout))
+            if capture.returncode !=0:
+                print(capture.stderr)
+                return ("You caused a bug! This will be worked on at our end, please try again with slighly diferent segmentation")
+            score = capture.stdout
+            return (score)
+        #     except:
+        #         return ("This version of the website is unable to report a PIRADS score")
+        else:
             return ("please segment the region of the prostate that requires analysis")
     else:
         return "Error: submitted GET request. POST request required"
@@ -415,6 +426,8 @@ def deleteAccount():
     db.session.commit()
     for folder in ["Aligned_DICOM", "JPG_converts", "uploads", "jpg_tumor"]:
         clearFiles(session["fileConfig"][folder])
+    if os.path.exists(os.path.join(basePath, "protected", session["user"],"files.zip")):
+        os.remove(os.path.join(basePath, "protected", session["user"],"files.zip"))
     flash("Account deletion successful", 'info')
     return redirect(url_for("logout"))
 
@@ -429,6 +442,9 @@ def deleteFiles():
     total = 0
     for num in count:
         total = total+num
+    if os.path.exists(os.path.join(basePath, "protected", session["user"],"files.zip")):
+        os.remove(os.path.join(basePath, "protected", session["user"],"files.zip"))
+        total = total+1
     flash(str(total) + " total files deleted including accessory files", "info")
     return redirect(url_for("index"))
 
@@ -458,9 +474,23 @@ def complete_download():
         flash("Files sent to browser", "info")
         return send_from_directory(zip_path, filename, mimetype='application/zip', as_attachment=True, attachment_filename= filename)
     else:
-        flash("Files not ready", 'error')
+        flash("Files not ready. Re-upload your dicoms files and try again", 'error')
         return redirect(url_for("index"))
 
+
+@app.route("/identifyLesions")
+@login_required
+def identifyLesions():
+    lesion = lesionsID()
+    lesion.patient = session["user"]
+    lesion.t2path = session["fileConfig"]["t2_Aligned_DICOM"]
+    lesion.highbpath = session["fileConfig"]["highb_Aligned_DICOM"]
+    lesion.adcpath = session["fileConfig"]["adc_Aligned_DICOM"]
+    lesion.ann_path= session["fileConfig"]["lesionID_save_voi"]
+    lesion.savepath = session["fileConfig"]["lesionID_save"]
+    lesion.process()
+    flash("identifying lesions","info")
+    return redirect(url_for("index"))
 
 @app.route("/sortDicoms",methods=["GET", "POST"])
 @login_required
@@ -514,14 +544,21 @@ def sortDicoms():
         try:
             return send_from_directory(zip_path, filename, mimetype='application/zip', as_attachment=True, attachment_filename= filename)
         finally:
-            shutil.rmtree(os.path.join(session["fileConfig"]["sortingDir"], 'unsorted'))
-            shutil.rmtree(os.path.join(session["fileConfig"]["sortingDir"], 'sorted_dicoms'))
-
+            shutil.rmtree(os.path.join(session["fileConfig"]["sortingDir"],"unsorted"))
+            shutil.rmtree(os.path.join(session["fileConfig"]["sortingDir"],"sorted_dicoms"))
             if os.path.exists(os.path.join(zip_path,filename)):
                 os.remove(os.path.join(zip_path,filename))
     else:
         flash("Attempted download with 'GET' request", 'error')
         return redirect(url_for("index"))
+
+@app.route("/adcbox")
+@login_required
+def testThisThing():
+    if request.method == "POST":
+        for file in request.files:
+            print("file found")
+            print(file.name)
 
 
 if __name__ == "__main__":
