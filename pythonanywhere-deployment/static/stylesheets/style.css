@@ -1,23 +1,34 @@
-/* css for the title and user login buttons */
-.Myheading{
-    padding-left: 5px;
+/* css for generic classes -------------------------------------------------------------------------------------------------*/
+.container{
+    padding: 7px;
     box-sizing: border-box;
     border: 1px solid black;
-    background-color: #B0B0B0;
-    height: 70px;
+    background-color: #E0E0E0;
     width: 100%;
     position: relative;
     min-width: 1158px;
 }
 
-.Mytitle_container{
-
+/* css for the title --------------------------------------------------------------------------------------------------------*/
+#titleContainer{
+    background-color: #B0B0B0;
+    height: 70px;
 }
 .Mytitle {
     font-family: Arial, Helvetica, sans-serif;
     font-weight: bold;
     text-align: left;
     height: center;
+}
+
+/* css for user info----------- -------------------------------------------------------------------------------------*/
+.userInfo_container{
+    border: 1px solid black;
+    background-color: #B0B0B0;
+    position: absolute;
+    float: right;
+    top: 19px;
+    right: 5px;
 }
 .userInfo {
     float: right;
@@ -35,114 +46,6 @@
 .userInfo li a {
     color: #0000FF;
 }
-/* css for the uloading forms and file lists */
-.tools {
-    padding: 5px;
-    height: 50px;
-    width: 100%;
-    border: 1px solid black;
-    background-color: #E0E0E0;
-    position: relative;
-    min-width: 1158px;
-    box-sizing: border-box;
-}
-.Myform{
-    display: inline;
-}
-#uploadBtn{
-    display: inline;
-}
-
-.fileList {
-    float: right;
-    display: none;
-}
-
-.userInfo_container{
-    border: 1px solid black;
-    background-color: #B0B0B0;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-#flashBox{
-    position: absolute;
-    bottom: -50px;
-    left: 10px;
-    height: 50px;
-}
-.info{
-    color: green;
-}
-.error{
-    color: red;
-}
-
-#openInfo{
-    float: left;
-    display:; inline;
-}
-#openUpload{
-    float: left;
-    display:; inline;
-}
-#sortDicoms{
-    float: left;
-    display:; inline;
-}
-}
-#downloadFiles{
-    float: left;
-    color: green;
-    display:; inline;
-}
-#deleteFiles{
-    float: left;
-    color: red;
-    display:; inline;
-}
-
-#InformationTab{
-    padding: 5px;
-    width: 100%;
-    border: 1px solid black;
-    background-color: #E0E0E0;
-    position: relative;
-    min-width: 1158px;
-    box-sizing: border-box;
-}
-#uploadForm{
-    padding: 5px;
-    width: 100%;
-    height: 170px;
-    border: 1px solid black;
-    background-color: #E0E0E0;
-    position: relative;
-    min-width: 1158px;
-    box-sizing: border-box;
-}
-
-#sortDicomsTab{
-    padding: 5px;
-    width: 100%;
-    border: 1px solid black;
-    background-color: #E0E0E0;
-    position: relative;
-    min-width: 1158px;
-    box-sizing: border-box;
-}
-
-#InformationTab{
-    padding: 5px;
-    width: 100%;
-    border: 1px solid black;
-    background-color: #E0E0E0;
-    position: relative;
-    min-width: 1158px;
-    box-sizing: border-box;
-}
-
 a {
     color: #000000;
     font-style: italic;
@@ -153,15 +56,61 @@ a:hover {
     color: blue;
     text-decoration: underline;
 }
+
+/* css for tools and actions --------------------------------------------------------------------------------*/
+#ToolsAndActions{
+
+}
+.sub{
+    margin: 7px;
+    display: block;
+    position: relative;
+    height: 30px;
+}
+.tools{
+    float: left;
+    display:; inline;
+    padding: 5px 10px;
+    border-radius: 15px;
+	margin: 3px;
+}
+.tools:hover{
+    background-color: #B0B0B0;
+}
+.actions:hover{
+    background-color: #B0B0B0;
+}
+.actions{
+    float: left;
+    display:; inline;
+    padding: 5px 10px;
+	border-radius: 15px;
+	margin: 3px;
+}
+
+#downloadFiles{
+    color: green;
+}
+#deleteFiles{
+    color: red;
+}
+/*flash box ---------------------------------------------------------------------------------------------*/
+.info{
+    color: green;
+}
+.error{
+    color: red;
+}
+
+/*css for tabs -------------------------------------------------------------------------------------------*/
+
+#uploadBtn{
+    display: inline;
+}
 /* css for the dicom viewports
 -----------------------------------------------------------------------------------------------------------------------
 */
-#viewPort {
-    position: relative;
-    background-color: #E0E0E0;
-    width: 100%;
-    min-width: 1158px;
-}
+
 .gridBox {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -203,10 +152,32 @@ button: hover{
     color: black;
 }
 
-/* css for the previous/next buttons */
+/* css for the previous/next buttons/ loader */
 .switch {
     background-color: #f1f1f1;
     color: black;
 }
 
+.loader {
+    border: 4px solid #f3f3f3; /* Light grey */
+    border-top: 4px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* css for the delete/submit buttons */
+
+
+
+/*css for depreciated file list*/
+.fileList {
+    float: right;
+    display: none;
+}
