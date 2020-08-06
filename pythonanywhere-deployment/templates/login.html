@@ -19,9 +19,9 @@
                 <div id="flashBox">
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
-                            {% for category, message in messages %}
-                                <p class="{{ category }}">{{ message }}</p>
-                            {% endfor %}
+                            {% with category,message = messages[0] %}
+                                    <p class="{{ category }}">{{ message }}</p>
+                            {% endwith %}
                         {% endif %}
                     {% endwith %}
                 </div>
