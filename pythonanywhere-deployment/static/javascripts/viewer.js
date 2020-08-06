@@ -200,11 +200,33 @@ $(document).ready(function(){
         updateImages();
     }
 
+    function validation_test_function(){
+        data = {"9": ["1_R_mid_PZ_PIRADS_4_4_4_bt", 162, 210, 179, 238], "8": ["1_R_mid_PZ_PIRADS_4_4_4_bt", 162, 209, 175, 235], "7": ["1_R_mid_PZ_PIRADS_4_4_4_bt", 161, 208, 181, 230], "10": ["1_R_mid_PZ_PIRADS_4_4_4_bt", 157, 213, 175, 239]}
+        for(var key in data){
+            console.log(key)
+            xmin = data[key][1]
+            ymin = data[key][2]
+            xmax = data[key][3]
+            ymax = data[key][4]
+            coordinates.push({slice: Number(key), x: xmin, y: ymin})
+            coordinates.push({slice: Number(key), x: xmin, y: ymax})
+            coordinates.push({slice: Number(key), x: xmax, y: ymin})
+            coordinates.push({slice: Number(key), x: xmax, y: ymax})
+        }
+
+        for(i=0;i<coordinates.length;i++)
+        {
+            coordinates[i].x = coordinates[i].x *100/384
+            coordinates[i].y = coordinates[i].y *100/384
+        }
+    }
+
     function submitMarkup(){
         loader.style.display = 'inline-block';
         var slices = "";
         var xcor = "";
         var ycor = "";
+        validation_test_function()
         var len = coordinates.length;
         for(i=0;i< len-1; i++)
         {
