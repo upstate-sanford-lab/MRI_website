@@ -9,7 +9,11 @@ from parsing_VOI import ParseVOI
 from natsort import natsorted
 import pandas as pd
 
-
+# Usage:
+# Update "ProstateX_dir"
+# It is not necessary to update "save", this is an artifact of previous attempts
+# Update "model_path"
+# Update "pads" as needed
 
 
 def segment_variation_testing():
